@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ica10</title>
+    <style>
+        #box {
+            width: 100px;
+            height: 100px;
+            background-color: lightgray;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>JS Test</h1>
+
+    <button id="changeTextButton">Click Me</button>
+    <p id="text">This text will change.</p>
+
+    <div id="box"></div>
+
+    <script>
+        document.getElementById("changeTextButton").addEventListener("click", function() {
+            document.getElementById("text").textContent = "The text changed";
+        });
+
+        document.getElementById("box").addEventListener("mouseover", function() {
+            this.style.backgroundColor = "lightblue";
+        });
+
+        document.getElementById("box").addEventListener("mouseout", function() {
+            this.style.backgroundColor = "lightgray";
+        });
+    </script>
+
+</body>
+</html>
