@@ -1,0 +1,90 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: black;
+    color: white;
+    margin: 0;
+    padding: 0;
+  }
+  
+  header {
+    text-align: center;
+    padding: 30px 0;
+  }
+  
+  h1 {
+    color: #00ffcc;
+    font-size: 2em;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+  
+  .app {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .quotes {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .quote-text {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #ffffff;
+  }
+  
+  .quote-author {
+    font-size: 16px;
+    color: #ffcc00;
+    margin-bottom: 10px;
+  }
+  
+  .controls {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .button {
+    background-color: #00ffcc;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .button:hover {
+    background-color: #00cccc;
+  }
+  
+  .loader {
+    width: 30px;
+    height: 30px;
+    border: 4px solid #333;
+    border-top: 4px solid #00ffcc;
+    border-radius: 50%;
+    margin: 15px auto;
+    animation: spin 1s linear infinite;
+    display: none;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .explanation {
+    background-color: #222;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #ffffff;
+  }
+  
