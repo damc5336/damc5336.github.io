@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enter Your Phone Number</title>
+  <style>
+    body {
+      background-color: #fefefe;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 50px;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    #problemInput {
+      font-size: 24px;
+      padding: 10px;
+      width: 180px;
+      border: 2px solid #333;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    #progress {
+      font-size: 20px;
+    }
+
+    #rules {
+      font-size: 16px;
+      color: #666;
+    }
+
+    #doneScreen {
+      display: none;
+      margin-top: 50px;
+    }
+
+    #phoneNumberDisplay {
+      font-size: 32px;
+      color: green;
+      margin-bottom: 20px;
+    }
+
+    #submitFake {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      font-size: 18px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #submitFake:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <h1>Enter Your Phone Number</h1>
+  <div id="rules">First 3: use <strong>+</strong> only | Next 3: use <strong>-</strong> only | Final 4: <strong>no repeats</strong></div>
+  <input id="problemInput" type="text" placeholder="Ex: 6+2" autofocus>
+  <div id="progress">Digits entered: </div>
+</div>
+
+<div id="doneScreen">
+  <div id="phoneNumberDisplay"></div>
+  <button id="submitFake">Submit</button>
+</div>
+
+<script>
+  const problemInput = document.getElementById('problemInput');
+  const progressDiv = document.getElementById('progress');
+  const doneScreen = document.getElementById('doneScreen');
+  const phoneDisplay = document.getElementById('phoneNumberDisplay');
+  const container = document.getElementById('container');
+
+  let phoneNumber = "";
+
+  function solve(problem) {
+    let parts;
+    if (problem.includes('+')) {
+      parts = problem.split('+');
+      return parseInt(parts[0]) + parseInt(parts[1]);
+    } else if (problem.includes('-')) {
+      parts = problem.split('-');
+      return parseInt(parts[0]) - parseInt(parts[1]);
+    } else {
+      return null;
+    }
+  }
+
+  problemInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      const input = problemInput.value.trim();
+      let result = solve(input);
+
+      if (result === null || isNaN(result) || result < 0 || result > 9) {
+        alert("Invalid. Only + and - problems that equal a digit 0–9 are allowed.");
+        problemInput.value = '';
+        return;
+      }
+
+      const position = phoneNumber.length;
+
+      if (position < 3 && !input.includes('+')) {
+        alert("Digits 1–3 must be addition problems.");
+        problemInput.value = '';
+        return;
+      }
+
+      if (position >= 3 && position < 6 && !input.includes('-')) {
+        alert("Digits 4–6 must be subtraction problems.");
+        problemInput.value = '';
+        return;
+      }
+
+      if (position >= 6 && phoneNumber.includes(result.toString())) {
+        alert("No duplicate digits allowed in the last 4!");
+        problemInput.value = '';
+        return;
+      }
+
+      phoneNumber += result.toString();
+      progressDiv.textContent = "Digits entered: " + phoneNumber;
+      problemInput.value = '';
+
+      if (phoneNumber.length === 10) {
+        container.style.display = "none";
+        doneScreen.style.display = "block";
+        phoneDisplay.textContent = "Your phone number is: " + phoneNumber;
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
