@@ -147,6 +147,14 @@
 
         try {
           await auth.createUserWithEmailAndPassword(email, pass);
+
+          // Track new user signup in Google Analytics
+          gtag('event', 'sign_up', {
+            'method': 'email',
+            'event_category': 'engagement',
+            'event_label': 'New User Registration'
+          });
+
           // onAuthStateChanged will fire and handle the rest
         } catch (err) {
           console.error("Sign up error:", err);
@@ -849,6 +857,15 @@
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
 
+          // Track ride post in Google Analytics
+          gtag('event', 'post_ride', {
+            'event_category': 'rides',
+            'event_label': mountain,
+            'value': seats,
+            'mountain': mountain,
+            'seats_available': seats
+          });
+
           const localId = rides.length;
 
           rides.push({
@@ -917,6 +934,13 @@
             await db.collection("rides").doc(ride.firestoreId).update({
               seats: ride.seats - 1,
               joinedProfiles: firebase.firestore.FieldValue.arrayUnion(passengerProfile)
+            });
+
+            // Track ride join in Google Analytics
+            gtag('event', 'join_ride', {
+              'event_category': 'rides',
+              'event_label': ride.mountain,
+              'mountain': ride.mountain
             });
 
             await showAlert("Successfully joined the ride!", "success");
