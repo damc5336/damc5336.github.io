@@ -10,18 +10,21 @@
    BASE & ROOT STYLES
    ========================================== */
 :root {
-  --primary-blue: #1e5f9f;
-  --primary-dark: #164771;
-  --accent-snow: #e8f4f8;
-  --accent-ice: #b3e5fc;
-  --text-dark: #2c3e50;
-  --text-medium: #546e7a;
-  --text-light: #90a4ae;
-  --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --card-bg: #ffffff;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --primary-blue: #4a9eff;
+  --primary-dark: #2d7dd2;
+  --accent-snow: #2a3847;
+  --accent-ice: #3d5a7a;
+  --text-dark: #e8edf3;
+  --text-medium: #b8c5d6;
+  --text-light: #8899aa;
+  --background: linear-gradient(135deg, #1a1f2e 0%, #2d1f3d 100%);
+  --card-bg: #252e3d;
+  --card-bg-lighter: #2f3a4d;
+  --border-color: #3d5a7a;
+  --input-bg: #1a2332;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -37,7 +40,7 @@
 body {
   margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -67,7 +70,7 @@ body {
   right: 0;
   height: 80px;
   background:
-    linear-gradient(to bottom, transparent 0%, rgba(230, 240, 255, 0.2) 100%);
+    linear-gradient(to bottom, transparent 0%, rgba(42, 63, 95, 0.15) 100%);
   pointer-events: none;
   z-index: 0;
 }
@@ -82,7 +85,7 @@ body {
   width: 100%;
   height: 40px;
   background:
-    linear-gradient(135deg, transparent 0%, transparent 45%, rgba(179, 229, 252, 0.15) 45%, rgba(179, 229, 252, 0.15) 50%, transparent 50%, transparent 95%, rgba(179, 229, 252, 0.15) 95%);
+    linear-gradient(135deg, transparent 0%, transparent 45%, rgba(42, 63, 95, 0.2) 45%, rgba(42, 63, 95, 0.2) 50%, transparent 50%, transparent 95%, rgba(42, 63, 95, 0.2) 95%);
   pointer-events: none;
   z-index: 0;
 }
@@ -91,7 +94,8 @@ body {
    HEADER
    ========================================== */
 header {
-  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #252e3d 0%, #2f3a4d 100%);
+  border-bottom: 3px solid var(--border-color);
   padding: 24px 20px;
   color: white;
   text-align: center;
@@ -108,7 +112,7 @@ header::before {
   left: 0;
   width: 100%;
   height: 60px;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(74, 158, 255, 0.15);
   clip-path: polygon(
     /* Mountain 1 - left, tallest */
     0% 100%, 3% 100%, 6% 10%, 9% 100%,
@@ -138,7 +142,7 @@ header::after {
   left: 0;
   width: 100%;
   height: 60px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(74, 158, 255, 0.08);
   clip-path: polygon(
     /* Small peaks between main mountains */
     0% 100%, 10% 100%, 12% 45%, 14% 100%,
@@ -237,9 +241,9 @@ select {
   padding: 12px 14px;
   margin-top: 0;
   border-radius: var(--radius-sm);
-  border: 2px solid #e0e7ff;
+  border: 2px solid var(--border-color);
   font-size: 15px;
-  background: white;
+  background: var(--input-bg);
   color: var(--text-dark);
   transition: all var(--transition-base);
   font-family: inherit;
@@ -249,7 +253,7 @@ input:focus,
 select:focus {
   outline: none;
   border-color: var(--primary-blue);
-  box-shadow: 0 0 0 3px rgba(30, 95, 159, 0.1);
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
 }
 
 input::placeholder {
@@ -385,13 +389,13 @@ button:active {
    RIDE CARDS
    ========================================== */
 .ride-card {
-  border: none;
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 18px;
   margin-top: 16px;
   font-size: 14px;
-  background: white;
-  box-shadow: var(--shadow-sm);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
   transition: all var(--transition-base);
   animation: cardSlideIn 0.3s ease-out backwards;
 }
@@ -414,8 +418,9 @@ button:active {
 .ride-card:nth-child(5) { animation-delay: 0.25s; }
 
 .ride-card:hover {
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
+  border-color: var(--primary-blue);
 }
 
 .ride-card-header {
@@ -443,7 +448,7 @@ button:active {
 
 /* Date and Time Display Box */
 .date-time-box {
-  background: linear-gradient(135deg, #e8f4f8 0%, #d1e8f0 100%);
+  background: var(--accent-snow);
   border: 2px solid var(--accent-ice);
   border-radius: var(--radius-md);
   padding: 12px 16px;
@@ -451,13 +456,13 @@ button:active {
   display: flex;
   align-items: center;
   gap: 16px;
-  box-shadow: 0 2px 8px rgba(30, 95, 159, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .date-display {
   font-size: 16px;
   font-weight: 700;
-  color: var(--primary-dark);
+  color: var(--primary-blue);
   font-family: 'Poppins', sans-serif;
   letter-spacing: 0.5px;
 }
@@ -465,7 +470,7 @@ button:active {
 .time-display {
   font-size: 15px;
   font-weight: 600;
-  color: var(--primary-blue);
+  color: var(--text-dark);
   padding-left: 16px;
   border-left: 2px solid var(--accent-ice);
 }
@@ -513,8 +518,9 @@ button:active {
 
 /* Completed ride styling */
 .ride-completed {
-  opacity: 0.7;
-  background: linear-gradient(135deg, #f8fdf9 0%, #e8f5e9 100%);
+  opacity: 0.6;
+  background: linear-gradient(135deg, #1a2a1f 0%, #1e2a25 100%);
+  border-color: #27ae60;
 }
 
 .completed-text {
@@ -602,10 +608,10 @@ button:active {
   font-size: 16px;
   color: var(--text-dark);
   padding: 14px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: var(--accent-snow);
   border-radius: var(--radius-sm);
   margin: 0;
-  border: 2px solid #e0e7ff;
+  border: 2px solid var(--border-color);
   font-weight: 500;
 }
 
@@ -622,8 +628,8 @@ button:active {
   flex: 1;
   padding: 10px;
   border-radius: var(--radius-md);
-  border: 2px solid #e0e7ff;
-  background: white;
+  border: 2px solid var(--border-color);
+  background: var(--input-bg);
   font-size: 13px;
   font-weight: 600;
   color: var(--text-medium);
@@ -734,13 +740,13 @@ button:active {
    FILTERS
    ========================================== */
 .filters {
-  border: 2px solid #e0e7ff;
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 16px;
   margin-bottom: 16px;
   font-size: 13px;
-  background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%);
-  box-shadow: var(--shadow-sm);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
 }
@@ -755,7 +761,7 @@ button:active {
   height: 0;
   border-left: 40px solid transparent;
   border-right: 40px solid transparent;
-  border-bottom: 60px solid rgba(179, 229, 252, 0.1);
+  border-bottom: 60px solid rgba(74, 158, 255, 0.1);
   transform: rotate(45deg);
   pointer-events: none;
 }
@@ -856,12 +862,13 @@ button:active {
 }
 
 .modal-box {
-  background: white;
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: 28px 24px;
   max-width: 340px;
   width: 90%;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
   animation: slideUp 0.3s ease-out;
   text-align: center;
   position: relative;
@@ -966,9 +973,9 @@ button:active {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background: white;
-  border-top: 1px solid #e0e7ff;
-  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  border-top: 3px solid var(--border-color);
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.5);
   z-index: 1000;
 }
 
