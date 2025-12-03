@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>CU There! Prototype</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  </head>
+
+  <body>
+    <div class="app">
+      <header>
+        <h1>CU There!</h1>
+      </header>
+
+      <!-- Main content gets swapped by JS -->
+      <main id="page"></main>
+
+      <nav class="tabbar">
+        <button onclick="navigate('find')">Find a Ride</button>
+        <button onclick="navigate('post')">Post a Ride</button>
+        <button onclick="navigate('trips')">My Trips</button>
+        <button onclick="navigate('profile')">Profile</button>
+      </nav>
+    </div>
+
+    <script>
+      // ---- Firebase init ----
+      const firebaseConfig = {
+        apiKey: "AIzaSyCFkHlvaqrc-qmZhI2mIl7k1oWVmi2FP-0",
+        authDomain: "cu-there-3ce42.firebaseapp.com",
+        projectId: "cu-there-3ce42",
+        storageBucket: "cu-there-3ce42.firebasestorage.app",
+        messagingSenderId: "707592204136",
+        appId: "1:707592204136:web:b1427e168ff64cb18d30dd",
+        measurementId: "G-XH9VVVX74R"
+      };
+
+      firebase.initializeApp(firebaseConfig);
+      const db   = firebase.firestore();
+      const auth = firebase.auth();
+
+      // ---- In-memory data ----
+      const rides  = [];  // all rides loaded from Firestore (real-time synced)
+      let profile  = null;
+      let profilePhotoDataUrl = null;
+      let tripsMode = "created";
+      let profileEditMode = false;
+      let ridesUnsubscribe = null;  // Cleanup function for real-time listener
+
+      const filters = {
+        mountain: "",
+        minSeats: "",
+        date: "",
+        startTime: "",
+        endTime: ""
+      };
+
+      const MAX_PHOTO_LENGTH = 900000; // safety limit for base64 length
+
+      // ---- Auth UI ----
+      function renderAuthPage() {
+        const main = document.getElementById("page");
+        main.innerHTML = `
+          <h2>Log In / Sign Up</h2>
+
+          <label for="authEmail">CU Email</label>
+          <input id="authEmail" type="email" placeholder="you@colorado.edu">
+
+          <label for="authPassword">Password</label>
+          <input id="authPassword" type="password" placeholder="Password">
+
+          <button class="primary-button" onclick="handleLogin()">Log In</button>
+          <button class="secondary-button" onclick="handleSignup()">Sign Up</button>
+        `;
+      }
+
+      async function handleSignup() {
+        const email = document.getElementById("authEmail").value.trim();
+        const pass  = document.getElementById("authPassword").value.trim();
+
+        if (!email || !pass) {
+          alert("Please enter email and password.");
+          return;
+        }
+
+        try {
+          await auth.createUserWithEmailAndPassword(email, pass);
+          // onAuthStateChanged will fire and handle the rest
+        } catch (err) {
+          console.error("Sign up error:", err);
+          alert(err.message || "Error signing up.");
+        }
+      }
+
+      async function handleLogin() {
+        const email = document.getElementById("authEmail").value.trim();
+        const pass  = document.getElementById("authPassword").value.trim();
+
+        if (!email || !pass) {
+          alert("Please enter email and password.");
+          return;
+        }
+
+        try {
+          await auth.signInWithEmailAndPassword(email, pass);
+          // onAuthStateChanged will fire
+        } catch (err) {
+          console.error("Login error:", err);
+          alert(err.message || "Error logging in.");
+        }
+      }
+
+      function handleLogout() {
+        auth.signOut();
+      }
+
+      // ---- Load/save profile from Firestore ----
+      async function loadUserProfile() {
+        const user = auth.currentUser;
+        if (!user) {
+          profile = null;
+          profilePhotoDataUrl = null;
+          return;
+        }
+
+        try {
+          const doc = await db.collection("users").doc(user.uid).get();
+          if (doc.exists) {
+            profile = doc.data();
+            profilePhotoDataUrl = profile.photo || null;
+          } else {
+            profile = null;
+            profilePhotoDataUrl = null;
+          }
+        } catch (err) {
+          console.error("Error loading profile:", err);
+        }
+      }
+
+      async function saveProfile() {
+        const user = auth.currentUser;
+        if (!user) {
+          alert("You must be logged in to save your profile.");
+          return;
+        }
+
+        const name      = document.getElementById("profileName").value.trim();
+        const instagram = document.getElementById("profileInsta").value.trim();
+        const phone     = document.getElementById("profilePhone").value.trim();
+        const email     = document.getElementById("profileEmail").value.trim();
+        const type      = document.getElementById("profileType").value;
+
+        // Safety check for oversized base64 string
+        if (profilePhotoDataUrl && profilePhotoDataUrl.length > MAX_PHOTO_LENGTH) {
+          alert("Profile photo is too large. Please choose a smaller image.");
+          return;
+        }
+
+        profile = {
+          name,
+          instagram,
+          phone,
+          email,
+          type,
+          photo: profilePhotoDataUrl || (profile && profile.photo) || null
+        };
+
+        try {
+          await db.collection("users").doc(user.uid).set(profile, { merge: true });
+          profileEditMode = false;
+          alert("Profile saved!");
+          renderProfilePage();
+        } catch (err) {
+          console.error("Error saving profile:", err);
+          alert("There was a problem saving your profile. Please try again.");
+        }
+      }
+
+      // ---- Real-time ride synchronization with Firestore ----
+      function setupRidesListener() {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        // Unsubscribe from previous listener if exists
+        if (ridesUnsubscribe) {
+          ridesUnsubscribe();
+        }
+
+        // Set up real-time listener
+        ridesUnsubscribe = db
+          .collection("rides")
+          .orderBy("createdAt", "desc")
+          .onSnapshot(snapshot => {
+            rides.length = 0; // Clear existing
+
+            let index = 0;
+            snapshot.forEach(docSnap => {
+              const data = docSnap.data();
+              rides.push({
+                id: index++,
+                firestoreId: docSnap.id,
+                driverProfile: data.driverProfile || null,
+                phone: data.phone || "",
+                date: data.date || "",
+                time: data.time || "",
+                mountain: data.mountain || "",
+                carModel: data.carModel || "",
+                seats: (typeof data.seats === "number") ? data.seats : 0,
+                createdByUid: data.createdByUid || null,
+                createdByMe: user && data.createdByUid === user.uid,
+                joinedProfiles: data.joinedProfiles || [],
+                isFull: data.isFull || false,
+                isCompleted: data.isCompleted || false
+              });
+            });
+
+            // Refresh current view if we're on find or trips page
+            const currentPage = getCurrentPage();
+            if (currentPage === "find") {
+              renderFindPage();
+            } else if (currentPage === "trips") {
+              renderTripsContent();
+            }
+          }, err => {
+            console.error("Error in rides listener:", err);
+          });
+      }
+
+      // Helper to determine current page
+      function getCurrentPage() {
+        const main = document.getElementById("page");
+        if (!main) return null;
+        const h2 = main.querySelector("h2");
+        if (!h2) return null;
+        const text = h2.textContent.trim();
+        if (text.includes("Find")) return "find";
+        if (text.includes("Trips")) return "trips";
+        if (text.includes("Post")) return "post";
+        if (text.includes("Profile")) return "profile";
+        return null;
+      }
+
+      // Helper: is a ride in the past?
+      function isPastRide(ride) {
+        if (!ride.date) return false;
+        const todayStr = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+        return ride.date < todayStr;
+      }
+
+      // ---- Navigation ----
+      function navigate(page) {
+        const main = document.getElementById("page");
+
+        if (page === "post") {
+          main.innerHTML = `
+            <h2>Post a Ride</h2>
+
+            <label for="nameInput">Name</label>
+            <input id="nameInput" type="text" placeholder="Enter your name">
+
+            <label for="phoneInput">Phone Number</label>
+            <input id="phoneInput" type="text" placeholder="Enter your phone number">
+
+            <label for="dateInput">Date</label>
+            <input id="dateInput" type="date">
+
+            <label for="timeInput">Time</label>
+            <input id="timeInput" type="time">
+
+            <label for="mountainInput">Mountain</label>
+            <select id="mountainInput">
+              <option value="">Select a mountain...</option>
+              <option value="Eldora">Eldora</option>
+              <option value="Vail">Vail</option>
+              <option value="Breckenridge">Breckenridge</option>
+              <option value="Keystone">Keystone</option>
+              <option value="Copper Mountain">Copper Mountain</option>
+              <option value="Arapahoe Basin">Arapahoe Basin</option>
+              <option value="Winter Park">Winter Park</option>
+              <option value="Steamboat">Steamboat</option>
+              <option value="Other">Other</option>
+            </select>
+
+            <label for="carInput">Car Model</label>
+            <input id="carInput" type="text" placeholder="e.g. Subaru Outback, Honda CR-V">
+
+            <label for="seatsInput">Seats Available</label>
+            <input id="seatsInput" type="number" min="1" max="8" placeholder="How many seats left?">
+
+            <button class="primary-button" onclick="postRide()">Post Ride</button>
+          `;
+          return;
+        }
+
+        if (page === "find") {
+          renderFindPage();
+          return;
+        }
+
+        if (page === "trips") {
+          main.innerHTML = `
+            <h2>My Trips</h2>
+            <div class="trips-tabs">
+              <button class="trips-tab-button ${tripsMode === 'created' ? 'trips-tab-active' : ''}"
+                      onclick="setTripsMode('created')">
+                Rides I Created
+              </button>
+              <button class="trips-tab-button ${tripsMode === 'joined' ? 'trips-tab-active' : ''}"
+                      onclick="setTripsMode('joined')">
+                Rides I've Joined
+              </button>
+            </div>
+            <div id="tripsContent"></div>
+          `;
+          renderTripsContent();
+          return;
+        }
+
+        if (page === "profile") {
+          renderProfilePage();
+          return;
+        }
+      }
+
+      // ---- Profile page rendering ----
+      function renderProfilePage() {
+        const main = document.getElementById("page");
+        const nameValue  = profile && profile.name      ? profile.name      : "";
+        const instaValue = profile && profile.instagram ? profile.instagram : "";
+        const phoneValue = profile && profile.phone     ? profile.phone     : "";
+        const emailValue = profile && profile.email     ? profile.email     : "";
+        const typeValue  = profile && profile.type      ? profile.type      : "";
+        const photoValue = profile && profile.photo     ? profile.photo     : profilePhotoDataUrl;
+
+        if (photoValue) {
+          profilePhotoDataUrl = photoValue;
+        }
+
+        const photoStyle = photoValue
+          ? `style="background-image: url('${photoValue}');"`
+          : "";
+
+        // Check if profile has been saved at least once
+        const hasProfile = profile && profile.name;
+
+        // If profile exists and not in edit mode, show view mode
+        if (hasProfile && !profileEditMode) {
+          const riderTypeDisplay = typeValue === "skier" ? "Skier" :
+                                   typeValue === "snowboarder" ? "Snowboarder" :
+                                   typeValue === "both" ? "Both" : "Not set";
+
+          main.innerHTML = `
+            <h2>Profile</h2>
+
+            <div class="profile-pic-wrapper">
+              <div class="profile-pic-circle" ${photoStyle}>
+                ${photoValue ? "" : (nameValue ? nameValue.charAt(0) : "")}
+              </div>
+            </div>
+
+            <div class="profile-field">
+              <label>Full Name</label>
+              <p class="profile-value">${nameValue || "Not set"}</p>
+            </div>
+
+            <div class="profile-field">
+              <label>Instagram</label>
+              <p class="profile-value">${instaValue || "Not set"}</p>
+            </div>
+
+            <div class="profile-field">
+              <label>Phone Number</label>
+              <p class="profile-value">${phoneValue || "Not set"}</p>
+            </div>
+
+            <div class="profile-field">
+              <label>Edu Email</label>
+              <p class="profile-value">${emailValue || "Not set"}</p>
+            </div>
+
+            <div class="profile-field">
+              <label>Rider Type</label>
+              <p class="profile-value">${riderTypeDisplay}</p>
+            </div>
+
+            <button class="primary-button" onclick="enterEditMode()">Edit Profile</button>
+            <button class="secondary-button" onclick="handleLogout()">Log Out</button>
+          `;
+        } else {
+          // Edit mode or first-time setup
+          main.innerHTML = `
+            <h2>${hasProfile ? "Edit Profile" : "Profile"}</h2>
+
+            <div class="profile-pic-wrapper">
+              <div class="profile-pic-circle" id="profilePicCircle" ${photoStyle} onclick="triggerProfilePicInput()">
+                ${photoValue ? "" : "Add photo"}
+              </div>
+            </div>
+
+            <input id="profilePic" type="file" accept="image/*" style="display:none" onchange="previewProfilePic(event)">
+
+            <label for="profileName">Full Name</label>
+            <input id="profileName" type="text" placeholder="Your full name" value="${nameValue}">
+
+            <label for="profileInsta">Instagram</label>
+            <input id="profileInsta" type="text" placeholder="@username" value="${instaValue}">
+
+            <label for="profilePhone">Phone Number</label>
+            <input id="profilePhone" type="text" placeholder="555-123-4567" value="${phoneValue}">
+
+            <label for="profileEmail">Edu Email</label>
+            <input id="profileEmail" type="email" placeholder="you@colorado.edu" value="${emailValue}">
+
+            <label for="profileType">Rider Type</label>
+            <select id="profileType">
+              <option value="" ${typeValue === "" ? "selected" : ""}>Select...</option>
+              <option value="skier" ${typeValue === "skier" ? "selected" : ""}>Skier</option>
+              <option value="snowboarder" ${typeValue === "snowboarder" ? "selected" : ""}>Snowboarder</option>
+              <option value="both" ${typeValue === "both" ? "selected" : ""}>Both</option>
+            </select>
+
+            <button class="primary-button" onclick="saveProfile()">Save Profile</button>
+            ${hasProfile ? '<button class="secondary-button" onclick="cancelEdit()">Cancel</button>' : ''}
+            <button class="secondary-button" onclick="handleLogout()">Log Out</button>
+          `;
+        }
+      }
+
+      function enterEditMode() {
+        profileEditMode = true;
+        renderProfilePage();
+      }
+
+      function cancelEdit() {
+        profileEditMode = false;
+        renderProfilePage();
+      }
+
+      // Helper: format date as MM/DD/YYYY
+      function formatDate(dateString) {
+        if (!dateString) return "No date";
+        const date = new Date(dateString + "T00:00:00");
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month}/${day}/${year}`;
+      }
+
+      // ---- Find a Ride with filters ----
+      function renderFindPage() {
+        const main = document.getElementById("page");
+
+        const filteredRides = rides.filter(ride => {
+          let ok = true;
+
+          // Don't show completed rides
+          if (ride.isCompleted) return false;
+
+          if (filters.mountain) {
+            ok = ok && ride.mountain === filters.mountain;
+          }
+          if (filters.minSeats) {
+            ok = ok && ride.seats >= Number(filters.minSeats);
+          }
+          if (filters.date) {
+            ok = ok && ride.date === filters.date;
+          }
+          if (filters.startTime) {
+            ok = ok && ride.time && ride.time >= filters.startTime;
+          }
+          if (filters.endTime) {
+            ok = ok && ride.time && ride.time <= filters.endTime;
+          }
+
+          return ok;
+        });
+
+        let listHtml = `
+          <h2>Find a Ride</h2>
+          <div class="filters">
+            <div class="filters-row">
+              <div class="filter-group">
+                <label for="filterMountain">Mountain</label>
+                <select id="filterMountain">
+                  <option value="" ${filters.mountain === "" ? "selected" : ""}>All mountains</option>
+                  <option value="Eldora" ${filters.mountain === "Eldora" ? "selected" : ""}>Eldora</option>
+                  <option value="Vail" ${filters.mountain === "Vail" ? "selected" : ""}>Vail</option>
+                  <option value="Breckenridge" ${filters.mountain === "Breckenridge" ? "selected" : ""}>Breckenridge</option>
+                  <option value="Keystone" ${filters.mountain === "Keystone" ? "selected" : ""}>Keystone</option>
+                  <option value="Copper Mountain" ${filters.mountain === "Copper Mountain" ? "selected" : ""}>Copper Mountain</option>
+                  <option value="Arapahoe Basin" ${filters.mountain === "Arapahoe Basin" ? "selected" : ""}>Arapahoe Basin</option>
+                  <option value="Winter Park" ${filters.mountain === "Winter Park" ? "selected" : ""}>Winter Park</option>
+                  <option value="Steamboat" ${filters.mountain === "Steamboat" ? "selected" : ""}>Steamboat</option>
+                  <option value="Other" ${filters.mountain === "Other" ? "selected" : ""}>Other</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="filterSeats">Min Seats</label>
+                <input id="filterSeats" type="number" min="1" placeholder="e.g. 1"
+                       value="${filters.minSeats}">
+              </div>
+            </div>
+            <div class="filters-row">
+              <div class="filter-group">
+                <label for="filterDate">Date</label>
+                <input id="filterDate" type="date" value="${filters.date}">
+              </div>
+              <div class="filter-group">
+                <label>Time Interval</label>
+                <div class="time-row">
+                  <input id="filterStartTime" type="time" value="${filters.startTime}">
+                  <span class="time-separator">to</span>
+                  <input id="filterEndTime" type="time" value="${filters.endTime}">
+                </div>
+              </div>
+            </div>
+            <button class="secondary-button" onclick="applyFilters()">Apply Filters</button>
+          </div>
+        `;
+
+        if (rides.length === 0) {
+          listHtml += `<p>No rides yet. Post one on the "Post a Ride" tab.</p>`;
+        } else if (filteredRides.length === 0) {
+          listHtml += `<p>No rides match your filters.</p>`;
+        } else {
+          const user = auth.currentUser;
+
+          for (let i = 0; i < filteredRides.length; i++) {
+            const ride = filteredRides[i];
+            const driverName =
+              ride.driverProfile && ride.driverProfile.name
+                ? ride.driverProfile.name
+                : "Driver";
+
+            // Check if current user has joined this ride
+            const isJoined = user && ride.joinedProfiles && ride.joinedProfiles.some(p =>
+              p.uid === user.uid || p.email === user.email
+            );
+            const disabled = ride.seats <= 0 || isJoined || ride.isFull;
+
+            // If this is the creator's ride, show "See Riders" button instead
+            const buttonHtml = ride.createdByMe
+              ? `<button class="secondary-button" onclick="showRidersList(${ride.id})">See Riders</button>`
+              : `<button
+                  class="${disabled ? 'disabled-button' : 'secondary-button'}"
+                  ${disabled ? 'disabled' : `onclick="joinRide(${ride.id})"`}
+                >
+                  ${isJoined ? 'Joined' : (ride.isFull || ride.seats <= 0 ? 'Full' : 'Join Ride')}
+                </button>`;
+
+            listHtml += `
+              <div class="ride-card">
+                <div class="ride-card-header">
+                  <h3>${ride.mountain}</h3>
+                  ${ride.isFull ? '<span class="full-badge">FULL</span>' : ''}
+                </div>
+                <div class="date-time-box">
+                  <div class="date-display">${formatDate(ride.date)}</div>
+                  ${ride.time ? `<div class="time-display">${ride.time}</div>` : ''}
+                </div>
+                <p><strong>Driver:</strong> ${driverName}</p>
+                <p><strong>Car:</strong> ${ride.carModel}</p>
+                <p><strong>Seats left:</strong> ${ride.seats}</p>
+                <p><strong>Contact:</strong> ${ride.phone}</p>
+
+                ${buttonHtml}
+              </div>
+            `;
+          }
+        }
+
+        main.innerHTML = listHtml;
+      }
+
+      function applyFilters() {
+        const mountainInput  = document.getElementById("filterMountain");
+        const seatsInput     = document.getElementById("filterSeats");
+        const dateInput      = document.getElementById("filterDate");
+        const startTimeInput = document.getElementById("filterStartTime");
+        const endTimeInput   = document.getElementById("filterEndTime");
+
+        filters.mountain  = mountainInput  ? mountainInput.value  : "";
+        filters.minSeats  = seatsInput     ? seatsInput.value     : "";
+        filters.date      = dateInput      ? dateInput.value      : "";
+        filters.startTime = startTimeInput ? startTimeInput.value : "";
+        filters.endTime   = endTimeInput   ? endTimeInput.value   : "";
+
+        renderFindPage();
+      }
+
+      // ---- My Trips helpers ----
+      function setTripsMode(mode) {
+        tripsMode = mode;
+        renderTripsContent();
+      }
+
+      function renderTripsContent() {
+        const container = document.getElementById("tripsContent");
+        if (!container) return;
+
+        if (tripsMode === "created") {
+          const createdRides = rides.filter(r => r.createdByMe);
+
+          if (createdRides.length === 0) {
+            container.innerHTML = `<p>You haven't created any rides yet.</p>`;
+            return;
+          }
+
+          let html = "";
+          createdRides.forEach(ride => {
+            const statusBadge = ride.isCompleted
+              ? '<span class="completed-badge">COMPLETED</span>'
+              : (ride.isFull ? '<span class="full-badge">FULL</span>' : '');
+
+            let actionButtons = '';
+            if (ride.isCompleted) {
+              actionButtons = '<p class="completed-text">This ride has been completed.</p>';
+            } else if (ride.isFull) {
+              actionButtons = `
+                <button class="secondary-button" onclick="markRideAsAvailable(${ride.id})">Mark as Available</button>
+                <button class="success-button" onclick="markRideAsCompleted(${ride.id})">Mark as Completed</button>
+              `;
+            } else {
+              actionButtons = `<button class="warning-button" onclick="markRideAsFull(${ride.id})">Mark as Full</button>`;
+            }
+
+            html += `
+              <div class="ride-card ${ride.isCompleted ? 'ride-completed' : ''}">
+                <div class="ride-card-header">
+                  <h3>${ride.mountain}</h3>
+                  ${statusBadge}
+                </div>
+                <div class="date-time-box">
+                  <div class="date-display">${formatDate(ride.date)}</div>
+                  ${ride.time ? `<div class="time-display">${ride.time}</div>` : ''}
+                </div>
+                <p><strong>Driver:</strong> ${ride.driverProfile && ride.driverProfile.name ? ride.driverProfile.name : "You"}</p>
+                <p><strong>Car:</strong> ${ride.carModel}</p>
+                <p><strong>Seats left:</strong> ${ride.seats}</p>
+                <p><strong>Contact:</strong> ${ride.phone}</p>
+
+                ${actionButtons}
+
+                <h4>Riders Joined</h4>
+                ${
+                  !ride.joinedProfiles || ride.joinedProfiles.length === 0
+                    ? `<p>No one has joined yet.</p>`
+                    : `<div class="joined-users-row">` +
+                      ride.joinedProfiles
+                        .map((p, idx) => {
+                          const bg = p.photo ? `style="background-image:url('${p.photo}')"` : "";
+                          const initial = !p.photo && p.name ? p.name.charAt(0) : "";
+                          return `
+                            <div class="joined-user" onclick="showUserProfileFromRide(${ride.id}, ${idx})">
+                              <div class="joined-user-pic" ${bg}>${!p.photo ? initial : ""}</div>
+                              <span class="joined-user-name">${p.name}</span>
+                            </div>
+                          `;
+                        })
+                        .join("") +
+                      `</div>`
+                }
+              </div>
+            `;
+          });
+
+          container.innerHTML = html;
+        } else {
+          // "Rides I've Joined" - filter rides where current user is in joinedProfiles
+          const user = auth.currentUser;
+          if (!user) {
+            container.innerHTML = `<p>Please log in to see your trips.</p>`;
+            return;
+          }
+
+          const joinedRides = rides.filter(ride =>
+            ride.joinedProfiles && ride.joinedProfiles.some(p =>
+              p.uid === user.uid || p.email === user.email
+            )
+          );
+
+          if (joinedRides.length === 0) {
+            container.innerHTML = `<p>You haven't joined any rides yet.</p>`;
+            return;
+          }
+
+          let html = "";
+          joinedRides.forEach(ride => {
+            const driver = ride.driverProfile;
+            const driverName = driver && driver.name ? driver.name : "Driver";
+            const driverPhoto = driver && driver.photo ? driver.photo : "";
+            const bg = driverPhoto ? `style="background-image:url('${driverPhoto}')"` : "";
+            const initial = !driverPhoto && driverName ? driverName.charAt(0) : "";
+
+            html += `
+              <div class="ride-card">
+                <div class="driver-header" onclick="showDriverProfile('${ride.firestoreId}')">
+                  <div class="joined-user-pic" ${bg}>${!driverPhoto ? initial : ""}</div>
+                  <span class="driver-name">${driverName}</span>
+                </div>
+
+                <h3>${ride.mountain}</h3>
+                <div class="date-time-box">
+                  <div class="date-display">${formatDate(ride.date)}</div>
+                  ${ride.time ? `<div class="time-display">${ride.time}</div>` : ''}
+                </div>
+                <p><strong>Car:</strong> ${ride.carModel}</p>
+                <p><strong>Seats left:</strong> ${ride.seats}</p>
+                <p><strong>Contact:</strong> ${ride.phone}</p>
+
+                <button class="danger-button" onclick="leaveRide(${ride.id})">
+                  Leave Ride
+                </button>
+              </div>
+            `;
+          });
+
+          container.innerHTML = html;
+        }
+      }
+
+      // ---- Ride actions ----
+      async function postRide() {
+        const user = auth.currentUser;
+        if (!user) {
+          alert("You must be logged in to post a ride.");
+          return;
+        }
+
+        const name       = document.getElementById("nameInput").value.trim();
+        const phone      = document.getElementById("phoneInput").value.trim();
+        const date       = document.getElementById("dateInput").value;
+        const timeInput  = document.getElementById("timeInput");
+        const time       = timeInput ? timeInput.value : "";
+        const mountain   = document.getElementById("mountainInput").value;
+        const carModel   = document.getElementById("carInput").value.trim();
+        const seatsValue = document.getElementById("seatsInput").value;
+
+        if (!name || !phone || !date || !mountain || !carModel || !seatsValue) {
+          alert("Please fill out all fields before posting.");
+          return;
+        }
+
+        const seats = Number(seatsValue);
+
+        const driverProfile = {
+          name:      (profile && profile.name)      ? profile.name      : name,
+          instagram: (profile && profile.instagram) ? profile.instagram : "",
+          phone:     phone,
+          email:     (profile && profile.email)     ? profile.email     : "",
+          type:      (profile && profile.type)      ? profile.type      : "",
+          photo:     (profile && profile.photo)     ? profile.photo     : null
+        };
+
+        try {
+          const docRef = await db.collection("rides").add({
+            driverProfile,
+            phone,
+            date,
+            time,
+            mountain,
+            carModel,
+            seats,
+            createdByUid: user.uid,
+            joinedProfiles: [],
+            isFull: false,
+            isCompleted: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          const localId = rides.length;
+
+          rides.push({
+            id: localId,
+            firestoreId: docRef.id,
+            driverProfile,
+            phone,
+            date,
+            time,
+            mountain,
+            carModel,
+            seats,
+            createdByUid: user.uid,
+            createdByMe: true,
+            joinedProfiles: [],
+            isFull: false,
+            isCompleted: false
+          });
+
+          navigate("find");
+        } catch (err) {
+          console.error("Error posting ride:", err);
+          alert("There was a problem posting your ride. Please try again.");
+        }
+      }
+
+      async function joinRide(rideId) {
+        const user = auth.currentUser;
+        if (!user) {
+          alert("You must be logged in to join a ride.");
+          return;
+        }
+
+        const ride = rides.find(r => r.id === rideId);
+        if (!ride) return;
+
+        // Check if ride is full
+        if (ride.seats <= 0 || ride.isFull) {
+          alert("This ride is full.");
+          return;
+        }
+
+        // Check if user already joined
+        const alreadyJoined = ride.joinedProfiles.some(p =>
+          p.uid === user.uid || p.email === user.email
+        );
+        if (alreadyJoined) {
+          alert("You've already joined this ride.");
+          return;
+        }
+
+        // Create passenger profile with UID for tracking
+        const passengerProfile = {
+          uid: user.uid,
+          name: (profile && profile.name) ? profile.name : user.email.split("@")[0],
+          instagram: (profile && profile.instagram) ? profile.instagram : "",
+          phone: (profile && profile.phone) ? profile.phone : "",
+          email: user.email,
+          type: (profile && profile.type) ? profile.type : "",
+          photo: (profile && profile.photo) ? profile.photo : null
+        };
+
+        // Update Firestore (real-time listener will update local rides array)
+        if (ride.firestoreId) {
+          try {
+            await db.collection("rides").doc(ride.firestoreId).update({
+              seats: ride.seats - 1,
+              joinedProfiles: firebase.firestore.FieldValue.arrayUnion(passengerProfile)
+            });
+
+            alert("Successfully joined the ride!");
+            tripsMode = "joined";
+            navigate("trips");
+          } catch (err) {
+            console.error("Error joining ride:", err);
+            alert("Failed to join ride. Please try again.");
+          }
+        }
+      }
+
+      async function leaveRide(rideId) {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const ride = rides.find(r => r.id === rideId);
+        if (!ride) return;
+
+        // Find current user's profile in joinedProfiles
+        const userProfile = ride.joinedProfiles.find(p =>
+          p.uid === user.uid || p.email === user.email
+        );
+
+        if (!userProfile) {
+          alert("You haven't joined this ride.");
+          return;
+        }
+
+        // Update Firestore (real-time listener will update local rides array)
+        if (ride.firestoreId) {
+          try {
+            await db.collection("rides").doc(ride.firestoreId).update({
+              seats: ride.seats + 1,
+              joinedProfiles: firebase.firestore.FieldValue.arrayRemove(userProfile)
+            });
+
+            alert("You've left the ride.");
+            tripsMode = "joined";
+            navigate("trips");
+          } catch (err) {
+            console.error("Error leaving ride:", err);
+            alert("Failed to leave ride. Please try again.");
+          }
+        }
+      }
+
+      async function markRideAsFull(rideId) {
+        const ride = rides.find(r => r.id === rideId);
+        if (!ride || !ride.createdByMe) return;
+
+        ride.isFull = true;
+
+        // Update Firestore
+        if (ride.firestoreId) {
+          try {
+            await db.collection("rides").doc(ride.firestoreId).update({
+              isFull: true
+            });
+            renderTripsContent();
+          } catch (err) {
+            console.error("Error updating ride full status:", err);
+            ride.isFull = false;
+          }
+        }
+      }
+
+      async function markRideAsAvailable(rideId) {
+        const ride = rides.find(r => r.id === rideId);
+        if (!ride || !ride.createdByMe) return;
+
+        // Prompt for new seat count
+        const newSeats = prompt(`How many seats are now available?\nCurrent riders: ${ride.joinedProfiles.length}`, "1");
+
+        if (newSeats === null) return; // User cancelled
+
+        const seatsNum = parseInt(newSeats);
+        if (isNaN(seatsNum) || seatsNum < 0) {
+          alert("Please enter a valid number of seats.");
+          return;
+        }
+
+        ride.isFull = false;
+        ride.seats = seatsNum;
+
+        // Update Firestore
+        if (ride.firestoreId) {
+          try {
+            await db.collection("rides").doc(ride.firestoreId).update({
+              isFull: false,
+              seats: seatsNum
+            });
+            renderTripsContent();
+          } catch (err) {
+            console.error("Error updating ride status:", err);
+            alert("There was a problem updating the ride. Please try again.");
+          }
+        }
+      }
+
+      async function markRideAsCompleted(rideId) {
+        const ride = rides.find(r => r.id === rideId);
+        if (!ride || !ride.createdByMe) return;
+
+        const confirm = window.confirm("Mark this ride as completed? This cannot be undone.");
+        if (!confirm) return;
+
+        ride.isCompleted = true;
+
+        // Update Firestore
+        if (ride.firestoreId) {
+          try {
+            await db.collection("rides").doc(ride.firestoreId).update({
+              isCompleted: true
+            });
+            renderTripsContent();
+          } catch (err) {
+            console.error("Error marking ride as completed:", err);
+            ride.isCompleted = false;
+            alert("There was a problem completing the ride. Please try again.");
+          }
+        }
+      }
+
+      // ---- Profile photo helpers ----
+      function triggerProfilePicInput() {
+        const input = document.getElementById("profilePic");
+        if (input) {
+          input.click();
+        }
+      }
+
+      function previewProfilePic(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // quick file size check before reading (bytes)
+        if (file.size > 800000) { // ~0.8MB raw, helps avoid hitting 1MB Firestore doc limit
+          alert("That image is too large. Please choose a smaller file.");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const dataUrl = e.target.result;
+          if (dataUrl.length > MAX_PHOTO_LENGTH) {
+            alert("That image is too large after encoding. Please choose a smaller file.");
+            profilePhotoDataUrl = null;
+            return;
+          }
+
+          profilePhotoDataUrl = dataUrl;
+          const circle = document.getElementById("profilePicCircle");
+          if (circle) {
+            circle.style.backgroundImage = `url('${profilePhotoDataUrl}')`;
+            circle.textContent = "";
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+
+      // ---- Show riders list for a ride ----
+      function showRidersList(rideId) {
+        const ride = rides.find(r => r.id === rideId);
+        if (!ride) return;
+
+        const main = document.getElementById("page");
+        if (!main) return;
+
+        let html = `
+          <h2>Riders for ${ride.mountain}</h2>
+          <div class="ride-card">
+            <h3>${ride.mountain}</h3>
+            <div class="date-time-box">
+              <div class="date-display">${formatDate(ride.date)}</div>
+              ${ride.time ? `<div class="time-display">${ride.time}</div>` : ''}
+            </div>
+            <p><strong>Car:</strong> ${ride.carModel}</p>
+            <p><strong>Seats left:</strong> ${ride.seats}</p>
+          </div>
+        `;
+
+        if (!ride.joinedProfiles || ride.joinedProfiles.length === 0) {
+          html += `<p>No riders have joined yet.</p>`;
+        } else {
+          html += `<h3>Joined Riders (${ride.joinedProfiles.length})</h3>`;
+          ride.joinedProfiles.forEach((rider, idx) => {
+            const photo = rider.photo || "";
+            const bg = photo ? `style="background-image:url('${photo}')"` : "";
+            const initial = !photo && rider.name ? rider.name.charAt(0) : "";
+
+            html += `
+              <div class="ride-card rider-profile-card" onclick="showUserProfileFromRideList(${rideId}, ${idx})">
+                <div class="driver-header">
+                  <div class="joined-user-pic" ${bg}>${!photo ? initial : ""}</div>
+                  <span class="driver-name">${rider.name || "Anonymous"}</span>
+                </div>
+                <p><strong>Instagram:</strong> ${rider.instagram || "Not provided"}</p>
+                <p><strong>Phone:</strong> ${rider.phone || "Not provided"}</p>
+                <p><strong>Email:</strong> ${rider.email || "Not provided"}</p>
+                <p><strong>Rider Type:</strong> ${rider.type || "Not provided"}</p>
+              </div>
+            `;
+          });
+        }
+
+        html += `<button class="primary-button" onclick="navigate('find')">Back to Find a Ride</button>`;
+
+        main.innerHTML = html;
+      }
+
+      function showUserProfileFromRideList(rideId, riderIndex) {
+        const ride = rides.find(r => r.id === rideId);
+        if (!ride || !ride.joinedProfiles || !ride.joinedProfiles[riderIndex]) return;
+
+        const user = ride.joinedProfiles[riderIndex];
+        renderUserProfilePage(user, rideId);
+      }
+
+      // ---- Show other user's full profile ----
+      function showUserProfileFromRide(rideId, riderIndex) {
+        const ride = rides.find(r => r.id === rideId);
+        if (!ride || !ride.joinedProfiles || !ride.joinedProfiles[riderIndex]) return;
+
+        const user = ride.joinedProfiles[riderIndex];
+        renderUserProfilePage(user);
+      }
+
+      function showUserProfileFromTrip(tripIndex) {
+        const ride = trips[tripIndex];
+        if (!ride || !ride.driverProfile) return;
+
+        const user = ride.driverProfile;
+        renderUserProfilePage(user);
+      }
+
+      // Helper to show driver profile from joined rides
+      function showDriverProfile(firestoreId) {
+        const ride = rides.find(r => r.firestoreId === firestoreId);
+        if (!ride || !ride.driverProfile) return;
+
+        const user = ride.driverProfile;
+        renderUserProfilePage(user);
+      }
+
+      function renderUserProfilePage(user, fromRideId = null) {
+        const main = document.getElementById("page");
+        if (!main) return;
+
+        const photo   = user.photo || "";
+        const bg      = photo ? `style="background-image:url('${photo}')"` : "";
+        const initial = !photo && user.name ? user.name.charAt(0) : "";
+
+        // Choose the appropriate back button based on context
+        const backButton = fromRideId !== null
+          ? `<button class="primary-button" onclick="showRidersList(${fromRideId})">Back to Riders List</button>`
+          : `<button class="primary-button" onclick="navigate('trips')">Back to My Trips</button>`;
+
+        main.innerHTML = `
+          <h2>${user.name}'s Profile</h2>
+          <div class="profile-pic-wrapper">
+            <div class="profile-pic-circle" ${bg}>
+              ${!photo ? initial : ""}
+            </div>
+          </div>
+
+          <p><strong>Full Name:</strong> ${user.name || "Not provided"}</p>
+          <p><strong>Instagram:</strong> ${user.instagram || "Not provided"}</p>
+          <p><strong>Phone:</strong> ${user.phone || "Not provided"}</p>
+          <p><strong>Edu Email:</strong> ${user.email || "Not provided"}</p>
+          <p><strong>Rider Type:</strong> ${user.type || "Not provided"}</p>
+
+          ${backButton}
+        `;
+      }
+
+      // ---- Auth state listener ----
+      auth.onAuthStateChanged(async user => {
+        if (user) {
+          await loadUserProfile();
+          setupRidesListener();  // Start real-time sync
+          navigate("find");
+        } else {
+          // Clean up
+          if (ridesUnsubscribe) {
+            ridesUnsubscribe();
+            ridesUnsubscribe = null;
+          }
+          profile = null;
+          profilePhotoDataUrl = null;
+          rides.length = 0;
+          renderAuthPage();
+        }
+      });
+
+      // First load: auth listener will decide what to show
+      window.onload = () => {
+        // nothing here; onAuthStateChanged will render login or app
+      };
+    </script>
+  </body>
+</html>
