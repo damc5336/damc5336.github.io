@@ -782,20 +782,174 @@ button:active {
 .time-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .time-row input {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
-  padding: 10px;
+  width: 0;
+  padding: 10px 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.time-row input[type="time"] {
+  padding: 10px 6px;
+}
+
+.time-row input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.time-row input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
 }
 
 .time-separator {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-light);
   font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.clear-filters-button {
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+  color: white;
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  margin-top: 8px;
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+.clear-filters-button:hover {
+  background: linear-gradient(135deg, #7f8c8d 0%, #6c7a7b 100%);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* ==========================================
+   CUSTOM MODAL SYSTEM
+   ========================================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.modal-box {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  max-width: 340px;
+  width: 90%;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+  text-align: center;
+  position: relative;
+}
+
+.modal-box.success {
+  border-top: 4px solid #27ae60;
+}
+
+.modal-box.error {
+  border-top: 4px solid #e74c3c;
+}
+
+.modal-box.warning {
+  border-top: 4px solid #f39c12;
+}
+
+.modal-box.danger {
+  border-top: 4px solid #e74c3c;
+}
+
+.modal-box.info {
+  border-top: 4px solid var(--primary-blue);
+}
+
+.modal-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  animation: scaleIn 0.4s ease-out;
+}
+
+.modal-message {
+  font-size: 16px;
+  color: var(--text-dark);
+  line-height: 1.6;
+  margin: 16px 0 24px 0;
+  font-weight: 500;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.modal-button {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: inherit;
+}
+
+.modal-primary {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.modal-primary:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.modal-cancel {
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.modal-cancel:hover {
+  background: linear-gradient(135deg, #7f8c8d 0%, #6c7a7b 100%);
+  transform: translateY(-1px);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ==========================================

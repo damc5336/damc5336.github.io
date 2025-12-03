@@ -60,7 +60,51 @@
         endTime: ""
       };
 
-      const MAX_PHOTO_LENGTH = 900000; // safety limit for base64 length
+      const MAX_PHOTO_LENGTH = 5000000; // safety limit for base64 length (~3.7MB image)
+
+      // ---- Custom Alert/Confirm System ----
+      function showAlert(message, type = 'info') {
+        return new Promise((resolve) => {
+          const overlay = document.createElement('div');
+          overlay.className = 'modal-overlay';
+          overlay.innerHTML = `
+            <div class="modal-box ${type}">
+              <div class="modal-icon">${type === 'error' ? '⚠️' : type === 'success' ? '✓' : 'ℹ️'}</div>
+              <p class="modal-message">${message}</p>
+              <button class="modal-button modal-primary" onclick="closeModal(this)">OK</button>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+
+          window.closeModal = function(btn) {
+            btn.closest('.modal-overlay').remove();
+            resolve(true);
+          };
+        });
+      }
+
+      function showConfirm(message, type = 'warning') {
+        return new Promise((resolve) => {
+          const overlay = document.createElement('div');
+          overlay.className = 'modal-overlay';
+          overlay.innerHTML = `
+            <div class="modal-box ${type}">
+              <div class="modal-icon">${type === 'danger' ? '⚠️' : '?'}</div>
+              <p class="modal-message">${message}</p>
+              <div class="modal-buttons">
+                <button class="modal-button modal-cancel" onclick="resolveModal(this, false)">Cancel</button>
+                <button class="modal-button modal-primary" onclick="resolveModal(this, true)">OK</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+
+          window.resolveModal = function(btn, result) {
+            btn.closest('.modal-overlay').remove();
+            resolve(result);
+          };
+        });
+      }
 
       // ---- Auth UI ----
       function renderAuthPage() {
@@ -84,7 +128,7 @@
         const pass  = document.getElementById("authPassword").value.trim();
 
         if (!email || !pass) {
-          alert("Please enter email and password.");
+          await showAlert("Please enter email and password.", "error");
           return;
         }
 
@@ -93,7 +137,7 @@
           // onAuthStateChanged will fire and handle the rest
         } catch (err) {
           console.error("Sign up error:", err);
-          alert(err.message || "Error signing up.");
+          await showAlert(err.message || "Error signing up.", "error");
         }
       }
 
@@ -102,7 +146,7 @@
         const pass  = document.getElementById("authPassword").value.trim();
 
         if (!email || !pass) {
-          alert("Please enter email and password.");
+          await showAlert("Please enter email and password.", "error");
           return;
         }
 
@@ -111,7 +155,7 @@
           // onAuthStateChanged will fire
         } catch (err) {
           console.error("Login error:", err);
-          alert(err.message || "Error logging in.");
+          await showAlert(err.message || "Error logging in.", "error");
         }
       }
 
@@ -145,7 +189,7 @@
       async function saveProfile() {
         const user = auth.currentUser;
         if (!user) {
-          alert("You must be logged in to save your profile.");
+          await showAlert("You must be logged in to save your profile.", "error");
           return;
         }
 
@@ -157,7 +201,7 @@
 
         // Safety check for oversized base64 string
         if (profilePhotoDataUrl && profilePhotoDataUrl.length > MAX_PHOTO_LENGTH) {
-          alert("Profile photo is too large. Please choose a smaller image.");
+          await showAlert("Profile photo is too large. Please choose a smaller image.", "error");
           return;
         }
 
@@ -173,11 +217,11 @@
         try {
           await db.collection("users").doc(user.uid).set(profile, { merge: true });
           profileEditMode = false;
-          alert("Profile saved!");
+          await showAlert("Profile saved!", "success");
           renderProfilePage();
         } catch (err) {
           console.error("Error saving profile:", err);
-          alert("There was a problem saving your profile. Please try again.");
+          await showAlert("There was a problem saving your profile. Please try again.", "error");
         }
       }
 
@@ -267,10 +311,10 @@
             <input id="phoneInput" type="text" placeholder="Enter your phone number">
 
             <label for="dateInput">Date</label>
-            <input id="dateInput" type="date">
+            <input id="dateInput" type="date" onclick="this.showPicker()">
 
             <label for="timeInput">Time</label>
-            <input id="timeInput" type="time">
+            <input id="timeInput" type="time" onclick="this.showPicker()">
 
             <label for="mountainInput">Mountain</label>
             <select id="mountainInput">
@@ -286,8 +330,8 @@
               <option value="Other">Other</option>
             </select>
 
-            <label for="carInput">Car Model</label>
-            <input id="carInput" type="text" placeholder="e.g. Subaru Outback, Honda CR-V">
+            <label for="carInput">Car Model (Maker, Model, Year)</label>
+            <input id="carInput" type="text" placeholder="e.g. Subaru Outback 2019">
 
             <label for="seatsInput">Seats Available</label>
             <input id="seatsInput" type="number" min="1" max="8" placeholder="How many seats left?">
@@ -508,18 +552,21 @@
             <div class="filters-row">
               <div class="filter-group">
                 <label for="filterDate">Date</label>
-                <input id="filterDate" type="date" value="${filters.date}">
+                <input id="filterDate" type="date" value="${filters.date}" onclick="this.showPicker()">
               </div>
-              <div class="filter-group">
+            </div>
+            <div class="filters-row">
+              <div class="filter-group" style="width: 100%;">
                 <label>Time Interval</label>
                 <div class="time-row">
-                  <input id="filterStartTime" type="time" value="${filters.startTime}">
+                  <input id="filterStartTime" type="time" value="${filters.startTime}" onclick="this.showPicker()">
                   <span class="time-separator">to</span>
-                  <input id="filterEndTime" type="time" value="${filters.endTime}">
+                  <input id="filterEndTime" type="time" value="${filters.endTime}" onclick="this.showPicker()">
                 </div>
               </div>
             </div>
             <button class="secondary-button" onclick="applyFilters()">Apply Filters</button>
+            <button class="clear-filters-button" onclick="clearAllFilters()">Clear All Filters</button>
           </div>
         `;
 
@@ -593,6 +640,15 @@
         renderFindPage();
       }
 
+      function clearAllFilters() {
+        filters.mountain = "";
+        filters.minSeats = "";
+        filters.date = "";
+        filters.startTime = "";
+        filters.endTime = "";
+        renderFindPage();
+      }
+
       // ---- My Trips helpers ----
       function setTripsMode(mode) {
         tripsMode = mode;
@@ -619,14 +675,21 @@
 
             let actionButtons = '';
             if (ride.isCompleted) {
-              actionButtons = '<p class="completed-text">This ride has been completed.</p>';
+              actionButtons = `
+                <p class="completed-text">This ride has been completed.</p>
+                <button class="danger-button" onclick="deleteRide(${ride.id})">Delete Ride</button>
+              `;
             } else if (ride.isFull) {
               actionButtons = `
                 <button class="secondary-button" onclick="markRideAsAvailable(${ride.id})">Mark as Available</button>
                 <button class="success-button" onclick="markRideAsCompleted(${ride.id})">Mark as Completed</button>
+                <button class="danger-button" onclick="deleteRide(${ride.id})">Delete Ride</button>
               `;
             } else {
-              actionButtons = `<button class="warning-button" onclick="markRideAsFull(${ride.id})">Mark as Full</button>`;
+              actionButtons = `
+                <button class="warning-button" onclick="markRideAsFull(${ride.id})">Mark as Full</button>
+                <button class="danger-button" onclick="deleteRide(${ride.id})">Delete Ride</button>
+              `;
             }
 
             html += `
@@ -728,7 +791,7 @@
       async function postRide() {
         const user = auth.currentUser;
         if (!user) {
-          alert("You must be logged in to post a ride.");
+          await showAlert("You must be logged in to post a ride.", "error");
           return;
         }
 
@@ -742,7 +805,7 @@
         const seatsValue = document.getElementById("seatsInput").value;
 
         if (!name || !phone || !date || !mountain || !carModel || !seatsValue) {
-          alert("Please fill out all fields before posting.");
+          await showAlert("Please fill out all fields before posting.", "error");
           return;
         }
 
@@ -795,14 +858,14 @@
           navigate("find");
         } catch (err) {
           console.error("Error posting ride:", err);
-          alert("There was a problem posting your ride. Please try again.");
+          await showAlert("There was a problem posting your ride. Please try again.", "error");
         }
       }
 
       async function joinRide(rideId) {
         const user = auth.currentUser;
         if (!user) {
-          alert("You must be logged in to join a ride.");
+          await showAlert("You must be logged in to join a ride.", "error");
           return;
         }
 
@@ -811,7 +874,7 @@
 
         // Check if ride is full
         if (ride.seats <= 0 || ride.isFull) {
-          alert("This ride is full.");
+          await showAlert("This ride is full.", "info");
           return;
         }
 
@@ -820,7 +883,7 @@
           p.uid === user.uid || p.email === user.email
         );
         if (alreadyJoined) {
-          alert("You've already joined this ride.");
+          await showAlert("You've already joined this ride.", "info");
           return;
         }
 
@@ -843,12 +906,12 @@
               joinedProfiles: firebase.firestore.FieldValue.arrayUnion(passengerProfile)
             });
 
-            alert("Successfully joined the ride!");
+            await showAlert("Successfully joined the ride!", "success");
             tripsMode = "joined";
             navigate("trips");
           } catch (err) {
             console.error("Error joining ride:", err);
-            alert("Failed to join ride. Please try again.");
+            await showAlert("Failed to join ride. Please try again.", "error");
           }
         }
       }
@@ -866,7 +929,7 @@
         );
 
         if (!userProfile) {
-          alert("You haven't joined this ride.");
+          await showAlert("You haven't joined this ride.", "info");
           return;
         }
 
@@ -878,12 +941,12 @@
               joinedProfiles: firebase.firestore.FieldValue.arrayRemove(userProfile)
             });
 
-            alert("You've left the ride.");
+            await showAlert("You've left the ride.", "success");
             tripsMode = "joined";
             navigate("trips");
           } catch (err) {
             console.error("Error leaving ride:", err);
-            alert("Failed to leave ride. Please try again.");
+            await showAlert("Failed to leave ride. Please try again.", "error");
           }
         }
       }
@@ -912,14 +975,14 @@
         const ride = rides.find(r => r.id === rideId);
         if (!ride || !ride.createdByMe) return;
 
-        // Prompt for new seat count
+        // Use a simple prompt for now (could be enhanced with a custom input modal)
         const newSeats = prompt(`How many seats are now available?\nCurrent riders: ${ride.joinedProfiles.length}`, "1");
 
         if (newSeats === null) return; // User cancelled
 
         const seatsNum = parseInt(newSeats);
         if (isNaN(seatsNum) || seatsNum < 0) {
-          alert("Please enter a valid number of seats.");
+          await showAlert("Please enter a valid number of seats.", "error");
           return;
         }
 
@@ -933,10 +996,11 @@
               isFull: false,
               seats: seatsNum
             });
+            await showAlert("Ride marked as available!", "success");
             renderTripsContent();
           } catch (err) {
             console.error("Error updating ride status:", err);
-            alert("There was a problem updating the ride. Please try again.");
+            await showAlert("There was a problem updating the ride. Please try again.", "error");
           }
         }
       }
@@ -945,8 +1009,8 @@
         const ride = rides.find(r => r.id === rideId);
         if (!ride || !ride.createdByMe) return;
 
-        const confirm = window.confirm("Mark this ride as completed? This cannot be undone.");
-        if (!confirm) return;
+        const confirmed = await showConfirm("Mark this ride as completed? This cannot be undone.", "warning");
+        if (!confirmed) return;
 
         ride.isCompleted = true;
 
@@ -956,11 +1020,36 @@
             await db.collection("rides").doc(ride.firestoreId).update({
               isCompleted: true
             });
+            await showAlert("Ride marked as completed!", "success");
             renderTripsContent();
           } catch (err) {
             console.error("Error marking ride as completed:", err);
             ride.isCompleted = false;
-            alert("There was a problem completing the ride. Please try again.");
+            await showAlert("There was a problem completing the ride. Please try again.", "error");
+          }
+        }
+      }
+
+      async function deleteRide(rideId) {
+        const ride = rides.find(r => r.id === rideId);
+        if (!ride || !ride.createdByMe) return;
+
+        const confirmMessage = ride.joinedProfiles && ride.joinedProfiles.length > 0
+          ? `This ride has ${ride.joinedProfiles.length} rider(s) who have joined. Are you sure you want to delete it? This cannot be undone.`
+          : "Are you sure you want to delete this ride? This cannot be undone.";
+
+        const confirmed = await showConfirm(confirmMessage, "danger");
+        if (!confirmed) return;
+
+        // Delete from Firestore
+        if (ride.firestoreId) {
+          try {
+            await db.collection("rides").doc(ride.firestoreId).delete();
+            await showAlert("Ride deleted successfully.", "success");
+            renderTripsContent();
+          } catch (err) {
+            console.error("Error deleting ride:", err);
+            await showAlert("There was a problem deleting the ride. Please try again.", "error");
           }
         }
       }
@@ -973,21 +1062,21 @@
         }
       }
 
-      function previewProfilePic(event) {
+      async function previewProfilePic(event) {
         const file = event.target.files[0];
         if (!file) return;
 
         // quick file size check before reading (bytes)
-        if (file.size > 800000) { // ~0.8MB raw, helps avoid hitting 1MB Firestore doc limit
-          alert("That image is too large. Please choose a smaller file.");
+        if (file.size > 4000000) { // ~4MB raw, allows for larger profile pictures
+          await showAlert("That image is too large. Please choose a smaller file (under 4MB).", "error");
           return;
         }
 
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
           const dataUrl = e.target.result;
           if (dataUrl.length > MAX_PHOTO_LENGTH) {
-            alert("That image is too large after encoding. Please choose a smaller file.");
+            await showAlert("That image is too large after encoding. Please choose a smaller file.", "error");
             profilePhotoDataUrl = null;
             return;
           }
