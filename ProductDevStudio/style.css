@@ -61,6 +61,111 @@ body {
   overflow: hidden;
 }
 
+/* Starry background for entire app */
+.app-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-stars::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow:
+    20px 120px 1px 0px rgba(255, 255, 255, 0.6),
+    55px 180px 1px 0px rgba(255, 255, 255, 0.4),
+    90px 250px 1px 0px rgba(255, 255, 255, 0.7),
+    130px 150px 1px 0px rgba(255, 255, 255, 0.5),
+    170px 320px 1px 0px rgba(255, 255, 255, 0.6),
+    210px 200px 1px 0px rgba(255, 255, 255, 0.4),
+    250px 280px 1px 0px rgba(255, 255, 255, 0.8),
+    290px 160px 1px 0px rgba(255, 255, 255, 0.5),
+    330px 240px 1px 0px rgba(255, 255, 255, 0.6),
+    370px 190px 1px 0px rgba(255, 255, 255, 0.4),
+    35px 350px 1px 0px rgba(255, 255, 255, 0.5),
+    75px 420px 1px 0px rgba(255, 255, 255, 0.7),
+    115px 380px 1px 0px rgba(255, 255, 255, 0.4),
+    155px 460px 1px 0px rgba(255, 255, 255, 0.6),
+    195px 410px 1px 0px rgba(255, 255, 255, 0.8),
+    235px 490px 1px 0px rgba(255, 255, 255, 0.5),
+    275px 440px 1px 0px rgba(255, 255, 255, 0.6),
+    315px 520px 1px 0px rgba(255, 255, 255, 0.4),
+    355px 470px 1px 0px rgba(255, 255, 255, 0.7),
+    50px 560px 1px 0px rgba(255, 255, 255, 0.5),
+    100px 600px 1px 0px rgba(255, 255, 255, 0.6),
+    145px 630px 1px 0px rgba(255, 255, 255, 0.4),
+    185px 580px 1px 0px rgba(255, 255, 255, 0.8),
+    225px 660px 1px 0px rgba(255, 255, 255, 0.5),
+    265px 620px 1px 0px rgba(255, 255, 255, 0.6),
+    305px 690px 1px 0px rgba(255, 255, 255, 0.4),
+    345px 640px 1px 0px rgba(255, 255, 255, 0.7),
+    30px 720px 1px 0px rgba(255, 255, 255, 0.5),
+    80px 780px 1px 0px rgba(255, 255, 255, 0.6),
+    125px 750px 1px 0px rgba(255, 255, 255, 0.4),
+    165px 810px 1px 0px rgba(255, 255, 255, 0.7),
+    205px 770px 1px 0px rgba(255, 255, 255, 0.5),
+    245px 840px 1px 0px rgba(255, 255, 255, 0.6),
+    285px 800px 1px 0px rgba(255, 255, 255, 0.4),
+    325px 870px 1px 0px rgba(255, 255, 255, 0.8);
+  animation: twinkle 4s infinite;
+}
+
+.app-stars::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0.5px;
+  height: 0.5px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow:
+    40px 140px 0.5px 0px rgba(200, 220, 255, 0.5),
+    70px 210px 0.5px 0px rgba(200, 220, 255, 0.4),
+    110px 270px 0.5px 0px rgba(200, 220, 255, 0.6),
+    150px 170px 0.5px 0px rgba(200, 220, 255, 0.4),
+    190px 340px 0.5px 0px rgba(200, 220, 255, 0.5),
+    230px 220px 0.5px 0px rgba(200, 220, 255, 0.4),
+    270px 300px 0.5px 0px rgba(200, 220, 255, 0.7),
+    310px 180px 0.5px 0px rgba(200, 220, 255, 0.4),
+    350px 260px 0.5px 0px rgba(200, 220, 255, 0.5),
+    60px 370px 0.5px 0px rgba(200, 220, 255, 0.4),
+    95px 440px 0.5px 0px rgba(200, 220, 255, 0.6),
+    135px 400px 0.5px 0px rgba(200, 220, 255, 0.4),
+    175px 480px 0.5px 0px rgba(200, 220, 255, 0.5),
+    215px 430px 0.5px 0px rgba(200, 220, 255, 0.7),
+    255px 510px 0.5px 0px rgba(200, 220, 255, 0.4),
+    295px 460px 0.5px 0px rgba(200, 220, 255, 0.5),
+    335px 540px 0.5px 0px rgba(200, 220, 255, 0.4),
+    70px 590px 0.5px 0px rgba(200, 220, 255, 0.5),
+    120px 620px 0.5px 0px rgba(200, 220, 255, 0.6),
+    160px 650px 0.5px 0px rgba(200, 220, 255, 0.4),
+    200px 600px 0.5px 0px rgba(200, 220, 255, 0.7),
+    240px 680px 0.5px 0px rgba(200, 220, 255, 0.4),
+    280px 640px 0.5px 0px rgba(200, 220, 255, 0.5),
+    320px 710px 0.5px 0px rgba(200, 220, 255, 0.4),
+    360px 670px 0.5px 0px rgba(200, 220, 255, 0.6),
+    45px 740px 0.5px 0px rgba(200, 220, 255, 0.4),
+    100px 800px 0.5px 0px rgba(200, 220, 255, 0.5),
+    140px 770px 0.5px 0px rgba(200, 220, 255, 0.4),
+    180px 830px 0.5px 0px rgba(200, 220, 255, 0.6),
+    220px 790px 0.5px 0px rgba(200, 220, 255, 0.4),
+    260px 860px 0.5px 0px rgba(200, 220, 255, 0.5),
+    300px 820px 0.5px 0px rgba(200, 220, 255, 0.4),
+    340px 890px 0.5px 0px rgba(200, 220, 255, 0.7);
+  animation: twinkle 5s infinite 1.5s;
+}
+
 /* Mountain range silhouette at bottom */
 .app::before {
   content: '';
@@ -94,78 +199,311 @@ body {
    HEADER
    ========================================== */
 header {
-  background: linear-gradient(135deg, #252e3d 0%, #2f3a4d 100%);
-  border-bottom: 3px solid var(--border-color);
-  padding: 24px 20px;
+  background: linear-gradient(180deg, #1a2332 0%, #252e3d 50%, #2f3a4d 100%);
+  border-bottom: 3px solid var(--primary-blue);
+  padding: 32px 20px 28px 20px;
   color: white;
   text-align: center;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
   position: relative;
   overflow: hidden;
 }
 
-/* Staggered mountain range using clip-path for realistic triangular peaks */
-header::before {
-  content: '';
+/* Starry night sky */
+.header-stars {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 60px;
-  background: rgba(74, 158, 255, 0.15);
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.header-stars::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow:
+    15px 8px 1px 0px rgba(255, 255, 255, 0.8),
+    45px 12px 1px 0px rgba(255, 255, 255, 0.6),
+    80px 6px 1px 0px rgba(255, 255, 255, 0.9),
+    120px 15px 1px 0px rgba(255, 255, 255, 0.7),
+    155px 9px 1px 0px rgba(255, 255, 255, 0.8),
+    190px 18px 1px 0px rgba(255, 255, 255, 0.5),
+    225px 7px 1px 0px rgba(255, 255, 255, 0.9),
+    260px 14px 1px 0px rgba(255, 255, 255, 0.6),
+    295px 10px 1px 0px rgba(255, 255, 255, 0.8),
+    330px 5px 1px 0px rgba(255, 255, 255, 0.7),
+    365px 16px 1px 0px rgba(255, 255, 255, 0.5),
+    30px 22px 1px 0px rgba(255, 255, 255, 0.6),
+    70px 25px 1px 0px rgba(255, 255, 255, 0.8),
+    110px 20px 1px 0px rgba(255, 255, 255, 0.7),
+    150px 28px 1px 0px rgba(255, 255, 255, 0.5),
+    185px 23px 1px 0px rgba(255, 255, 255, 0.9),
+    220px 30px 1px 0px rgba(255, 255, 255, 0.6),
+    255px 26px 1px 0px rgba(255, 255, 255, 0.8),
+    290px 24px 1px 0px rgba(255, 255, 255, 0.7),
+    325px 32px 1px 0px rgba(255, 255, 255, 0.5),
+    360px 27px 1px 0px rgba(255, 255, 255, 0.6),
+    50px 35px 1px 0px rgba(255, 255, 255, 0.8),
+    95px 38px 1px 0px rgba(255, 255, 255, 0.5),
+    135px 33px 1px 0px rgba(255, 255, 255, 0.7),
+    175px 40px 1px 0px rgba(255, 255, 255, 0.6),
+    210px 36px 1px 0px rgba(255, 255, 255, 0.9),
+    245px 42px 1px 0px rgba(255, 255, 255, 0.5),
+    280px 39px 1px 0px rgba(255, 255, 255, 0.8),
+    315px 37px 1px 0px rgba(255, 255, 255, 0.7),
+    350px 45px 1px 0px rgba(255, 255, 255, 0.6);
+  animation: twinkle 3s infinite;
+}
+
+.header-stars::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow:
+    25px 10px 0.5px 0px rgba(200, 220, 255, 0.7),
+    60px 8px 0.5px 0px rgba(200, 220, 255, 0.5),
+    100px 13px 0.5px 0px rgba(200, 220, 255, 0.8),
+    140px 7px 0.5px 0px rgba(200, 220, 255, 0.6),
+    180px 16px 0.5px 0px rgba(200, 220, 255, 0.7),
+    215px 11px 0.5px 0px rgba(200, 220, 255, 0.5),
+    250px 9px 0.5px 0px rgba(200, 220, 255, 0.8),
+    285px 14px 0.5px 0px rgba(200, 220, 255, 0.6),
+    320px 12px 0.5px 0px rgba(200, 220, 255, 0.7),
+    355px 8px 0.5px 0px rgba(200, 220, 255, 0.5),
+    40px 24px 0.5px 0px rgba(200, 220, 255, 0.6),
+    85px 28px 0.5px 0px rgba(200, 220, 255, 0.8),
+    125px 22px 0.5px 0px rgba(200, 220, 255, 0.5),
+    165px 29px 0.5px 0px rgba(200, 220, 255, 0.7),
+    200px 26px 0.5px 0px rgba(200, 220, 255, 0.6),
+    235px 31px 0.5px 0px rgba(200, 220, 255, 0.8),
+    270px 25px 0.5px 0px rgba(200, 220, 255, 0.5),
+    305px 34px 0.5px 0px rgba(200, 220, 255, 0.7),
+    340px 30px 0.5px 0px rgba(200, 220, 255, 0.6),
+    65px 38px 0.5px 0px rgba(200, 220, 255, 0.5),
+    105px 41px 0.5px 0px rgba(200, 220, 255, 0.7),
+    145px 36px 0.5px 0px rgba(200, 220, 255, 0.6),
+    195px 43px 0.5px 0px rgba(200, 220, 255, 0.8),
+    230px 39px 0.5px 0px rgba(200, 220, 255, 0.5),
+    265px 44px 0.5px 0px rgba(200, 220, 255, 0.7),
+    300px 41px 0.5px 0px rgba(200, 220, 255, 0.6),
+    335px 46px 0.5px 0px rgba(200, 220, 255, 0.5),
+    370px 42px 0.5px 0px rgba(200, 220, 255, 0.8);
+  animation: twinkle 4s infinite 1s;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Animated snow particles */
+@keyframes snowfall {
+  0% {
+    transform: translateY(-10px) translateX(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(80px) translateX(10px);
+    opacity: 0;
+  }
+}
+
+/* Front mountain layer - brightest with directional lighting */
+header::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: linear-gradient(120deg,
+    rgba(74, 158, 255, 0.45) 0%,
+    rgba(100, 180, 255, 0.35) 25%,
+    rgba(74, 158, 255, 0.3) 50%,
+    rgba(50, 120, 200, 0.4) 75%,
+    rgba(74, 158, 255, 0.45) 100%
+  );
   clip-path: polygon(
     /* Mountain 1 - left, tallest */
-    0% 100%, 3% 100%, 6% 10%, 9% 100%,
+    0% 100%, 3% 100%, 6% 5%, 9% 100%,
     /* Mountain 2 - left-center, short */
-    18% 100%, 20% 100%, 22% 35%, 24% 100%,
+    18% 100%, 20% 100%, 22% 32%, 24% 100%,
     /* Mountain 3 - center-left, medium */
-    32% 100%, 35% 100%, 38.5% 15%, 42% 100%,
+    32% 100%, 35% 100%, 38.5% 12%, 42% 100%,
     /* Mountain 4 - center, tall */
-    45% 100%, 48% 100%, 52% 20%, 56% 100%,
+    45% 100%, 48% 100%, 52% 8%, 56% 100%,
     /* Mountain 5 - center-right, medium-short */
-    62% 100%, 64% 100%, 66% 30%, 68% 100%,
+    62% 100%, 64% 100%, 66% 28%, 68% 100%,
     /* Mountain 6 - right-center, tall */
-    74% 100%, 77% 100%, 80.5% 8%, 84% 100%,
+    74% 100%, 77% 100%, 80.5% 3%, 84% 100%,
     /* Mountain 7 - far right, medium */
-    88% 100%, 90% 100%, 93% 25%, 96% 100%,
+    88% 100%, 90% 100%, 93% 22%, 96% 100%,
+    100% 100%, 100% 100%, 0% 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 12px rgba(74, 158, 255, 0.5))
+          drop-shadow(-3px -3px 6px rgba(255, 255, 255, 0.15))
+          drop-shadow(3px 3px 8px rgba(0, 0, 0, 0.6));
+}
+
+/* Middle mountain layer - medium tone with shading */
+header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 75px;
+  background: linear-gradient(110deg,
+    rgba(61, 90, 122, 0.35) 0%,
+    rgba(74, 110, 150, 0.25) 40%,
+    rgba(50, 80, 110, 0.3) 100%
+  );
+  clip-path: polygon(
+    /* Small peaks between main mountains */
+    0% 100%, 5% 100%, 10% 45%, 15% 100%,
+    25% 100%, 30% 100%, 36% 30%, 42% 100%,
+    52% 100%, 58% 100%, 64% 38%, 70% 100%,
+    78% 100%, 83% 100%, 88% 48%, 93% 100%,
     100% 100%, 100% 100%, 0% 100%
   );
   z-index: 1;
   pointer-events: none;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.4))
+          drop-shadow(-2px -2px 4px rgba(74, 158, 255, 0.1));
 }
 
-/* Additional smaller peaks for depth */
-header::after {
-  content: '';
+/* Distant mountain layers for atmospheric depth */
+.mountain-layer {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   width: 100%;
-  height: 60px;
-  background: rgba(74, 158, 255, 0.08);
+  pointer-events: none;
+}
+
+/* Farthest mountain layer - very faint, most distant */
+.mountain-far {
+  height: 90px;
+  background: linear-gradient(135deg,
+    rgba(25, 40, 60, 0.15) 0%,
+    rgba(30, 45, 65, 0.12) 50%,
+    rgba(25, 40, 60, 0.15) 100%
+  );
   clip-path: polygon(
-    /* Small peaks between main mountains */
-    0% 100%, 10% 100%, 12% 45%, 14% 100%,
-    27% 100%, 28.5% 100%, 30% 38%, 31.5% 100%,
-    40% 100%, 41% 100%, 42.5% 42%, 44% 100%,
-    58% 100%, 59% 100%, 60.5% 40%, 62% 100%,
-    70% 100%, 71% 100%, 72.5% 50%, 74% 100%,
-    84% 100%, 85.5% 100%, 87% 48%, 88.5% 100%,
+    0% 100%, 10% 100%, 18% 55%, 26% 100%,
+    40% 100%, 48% 100%, 58% 48%, 68% 100%,
+    78% 100%, 86% 100%, 92% 52%, 98% 100%,
     100% 100%, 100% 100%, 0% 100%
   );
-  z-index: 0;
-  pointer-events: none;
+  z-index: -2;
+  filter: blur(2px) opacity(0.6);
+}
+
+.mountain-far::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 90px;
+  background: linear-gradient(125deg,
+    rgba(20, 35, 55, 0.12) 0%,
+    rgba(25, 40, 60, 0.08) 100%
+  );
+  clip-path: polygon(
+    5% 100%, 12% 100%, 20% 60%, 28% 100%,
+    45% 100%, 52% 100%, 60% 58%, 68% 100%,
+    82% 100%, 88% 100%, 94% 62%, 100% 100%,
+    100% 100%, 0% 100%, 0% 100%
+  );
+  filter: blur(2.5px);
+}
+
+/* Distant mountain layer - very faded */
+.mountain-distant {
+  height: 85px;
+  background: linear-gradient(130deg,
+    rgba(35, 55, 80, 0.22) 0%,
+    rgba(40, 60, 85, 0.18) 50%,
+    rgba(35, 55, 80, 0.22) 100%
+  );
+  clip-path: polygon(
+    0% 100%, 7% 100%, 13% 50%, 19% 100%,
+    32% 100%, 38% 100%, 45% 45%, 52% 100%,
+    64% 100%, 70% 100%, 78% 52%, 86% 100%,
+    92% 100%, 96% 100%, 100% 58%, 100% 100%, 0% 100%
+  );
+  z-index: -1;
+  filter: blur(1.8px) opacity(0.75);
+}
+
+.mountain-distant::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 85px;
+  background: linear-gradient(115deg,
+    rgba(30, 50, 75, 0.18) 0%,
+    rgba(35, 55, 80, 0.14) 100%
+  );
+  clip-path: polygon(
+    3% 100%, 9% 100%, 16% 54%, 23% 100%,
+    38% 100%, 44% 100%, 52% 48%, 60% 100%,
+    72% 100%, 78% 100%, 85% 56%, 92% 100%,
+    100% 100%, 0% 100%, 0% 100%
+  );
+  filter: blur(2px);
 }
 
 header h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
   font-family: 'Poppins', sans-serif;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffffff 0%, #4a9eff 50%, #87ceeb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 20px rgba(74, 158, 255, 0.3));
   position: relative;
-  z-index: 2;
+  z-index: 100;
+  isolation: isolate;
+  animation: titleGlow 3s ease-in-out infinite;
+}
+
+@keyframes titleGlow {
+  0%, 100% {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 20px rgba(74, 158, 255, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 30px rgba(74, 158, 255, 0.5));
+  }
 }
 
 /* ==========================================
@@ -656,15 +994,20 @@ button:active {
   align-items: center;
   gap: 10px;
   margin-top: 10px;
-  padding: 8px;
-  border-radius: var(--radius-sm);
+  padding: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
 }
 
 .joined-user:hover {
-  background: var(--accent-snow);
-  transform: translateX(4px);
+  background: var(--card-bg);
+  border-color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .joined-users-row {
@@ -722,13 +1065,13 @@ button:active {
 .rider-profile-card {
   cursor: pointer;
   transition: all var(--transition-base);
-  border: 2px solid transparent;
+  border: 2px solid var(--border-color);
 }
 
 .rider-profile-card:hover {
-  background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%);
+  background: var(--card-bg);
   border-color: var(--primary-blue);
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }
 
@@ -1072,14 +1415,14 @@ main > p:first-child:last-child {
 main > p:only-child::after {
   content: '';
   display: inline-block;
-  width: 16px;
-  height: 16px;
+  width: 0;
+  height: 0;
   margin-left: 8px;
   position: relative;
   top: 2px;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-bottom: 12px solid var(--text-light);
+  border-bottom: 14px solid var(--text-light);
   opacity: 0.6;
   animation: mountainFloat 2s ease-in-out infinite;
 }

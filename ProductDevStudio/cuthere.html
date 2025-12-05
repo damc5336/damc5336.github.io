@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CU There! Prototype</title>
     <link rel="stylesheet" href="style.css">
 
@@ -27,7 +28,11 @@
 
   <body>
     <div class="app">
+      <div class="app-stars"></div>
       <header>
+        <div class="header-stars"></div>
+        <div class="mountain-layer mountain-far"></div>
+        <div class="mountain-layer mountain-distant"></div>
         <h1>CU There!</h1>
       </header>
 
@@ -123,33 +128,97 @@
       }
 
       // ---- Auth UI ----
+      let authMode = "login"; // "login" or "signup"
+
       function renderAuthPage() {
         const main = document.getElementById("page");
-        main.innerHTML = `
-          <h2>Log In / Sign Up</h2>
 
-          <label for="authEmail">CU Email</label>
-          <input id="authEmail" type="email" placeholder="you@colorado.edu">
+        if (authMode === "login") {
+          main.innerHTML = `
+            <h2>Log In</h2>
 
-          <label for="authPassword">Password</label>
-          <input id="authPassword" type="password" placeholder="Password">
+            <label for="authEmail">CU Email</label>
+            <input id="authEmail" type="email" placeholder="you@colorado.edu">
 
-          <button class="primary-button" onclick="handleLogin()">Log In</button>
-          <button class="secondary-button" onclick="handleSignup()">Sign Up</button>
-        `;
+            <label for="authPassword">Password</label>
+            <input id="authPassword" type="password" placeholder="Password">
+
+            <button class="primary-button" onclick="handleLogin()">Log In</button>
+            <p style="text-align: center; margin-top: 16px;">
+              Don't have an account? <a href="#" onclick="switchToSignup(); return false;" style="color: #CFB87C; text-decoration: underline;">Sign Up</a>
+            </p>
+          `;
+        } else {
+          main.innerHTML = `
+            <h2>Sign Up</h2>
+
+            <label for="signupName">Full Name</label>
+            <input id="signupName" type="text" placeholder="Your full name">
+
+            <label for="signupInsta">Instagram</label>
+            <input id="signupInsta" type="text" placeholder="@username">
+
+            <label for="signupPhone">Phone Number</label>
+            <input id="signupPhone" type="text" placeholder="555-123-4567">
+
+            <label for="signupEmail">Edu Email</label>
+            <input id="signupEmail" type="email" placeholder="you@colorado.edu">
+
+            <label for="signupType">Rider Type</label>
+            <select id="signupType">
+              <option value="">Select...</option>
+              <option value="skier">Skier</option>
+              <option value="snowboarder">Snowboarder</option>
+              <option value="both">Both</option>
+            </select>
+
+            <label for="signupPassword">Password</label>
+            <input id="signupPassword" type="password" placeholder="Password">
+
+            <button class="primary-button" onclick="handleSignup()">Sign Up</button>
+            <p style="text-align: center; margin-top: 16px;">
+              Already have an account? <a href="#" onclick="switchToLogin(); return false;" style="color: #CFB87C; text-decoration: underline;">Log In</a>
+            </p>
+          `;
+        }
+      }
+
+      function switchToLogin() {
+        authMode = "login";
+        renderAuthPage();
+      }
+
+      function switchToSignup() {
+        authMode = "signup";
+        renderAuthPage();
       }
 
       async function handleSignup() {
-        const email = document.getElementById("authEmail").value.trim();
-        const pass  = document.getElementById("authPassword").value.trim();
+        const name = document.getElementById("signupName").value.trim();
+        const instagram = document.getElementById("signupInsta").value.trim();
+        const phone = document.getElementById("signupPhone").value.trim();
+        const email = document.getElementById("signupEmail").value.trim();
+        const type = document.getElementById("signupType").value;
+        const pass = document.getElementById("signupPassword").value.trim();
 
-        if (!email || !pass) {
-          await showAlert("Please enter email and password.", "error");
+        if (!name || !instagram || !phone || !email || !type || !pass) {
+          await showAlert("Please fill in all fields.", "error");
           return;
         }
 
         try {
-          await auth.createUserWithEmailAndPassword(email, pass);
+          const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+          const user = userCredential.user;
+
+          // Save profile data to Firestore
+          await db.collection("users").doc(user.uid).set({
+            name,
+            instagram,
+            phone,
+            email,
+            type,
+            photo: null
+          });
 
           // Track new user signup in Google Analytics
           gtag('event', 'sign_up', {
@@ -158,7 +227,7 @@
             'event_label': 'New User Registration'
           });
 
-          // onAuthStateChanged will fire and handle the rest
+          // onAuthStateChanged will fire and load the profile, then navigate to find page
         } catch (err) {
           console.error("Sign up error:", err);
           await showAlert(err.message || "Error signing up.", "error");
@@ -325,14 +394,21 @@
         const main = document.getElementById("page");
 
         if (page === "post") {
+          const userName = profile && profile.name ? profile.name : "";
+          const userPhone = profile && profile.phone ? profile.phone : "";
+
           main.innerHTML = `
             <h2>Post a Ride</h2>
 
-            <label for="nameInput">Name</label>
-            <input id="nameInput" type="text" placeholder="Enter your name">
+            <div class="profile-field">
+              <label>Your Name</label>
+              <p class="profile-value">${userName || "Not set - update your profile"}</p>
+            </div>
 
-            <label for="phoneInput">Phone Number</label>
-            <input id="phoneInput" type="text" placeholder="Enter your phone number">
+            <div class="profile-field">
+              <label>Your Phone Number</label>
+              <p class="profile-value">${userPhone || "Not set - update your profile"}</p>
+            </div>
 
             <label for="dateInput">Date</label>
             <input id="dateInput" type="date" onclick="this.showPicker()">
@@ -614,15 +690,18 @@
             );
             const disabled = ride.seats <= 0 || isJoined || ride.isFull;
 
-            // If this is the creator's ride, show "See Riders" button instead
-            const buttonHtml = ride.createdByMe
-              ? `<button class="secondary-button" onclick="showRidersList(${ride.id})">See Riders</button>`
+            // Primary action button (only for rides not created by current user)
+            const primaryButtonHtml = ride.createdByMe
+              ? ''
               : `<button
                   class="${disabled ? 'disabled-button' : 'secondary-button'}"
                   ${disabled ? 'disabled' : `onclick="joinRide(${ride.id})"`}
                 >
                   ${isJoined ? 'Joined' : (ride.isFull || ride.seats <= 0 ? 'Full' : 'Join Ride')}
                 </button>`;
+
+            // See Riders button (always show for all rides)
+            const seeRidersButtonHtml = `<button class="secondary-button" onclick="showRidersList(${ride.id})">See Riders</button>`;
 
             listHtml += `
               <div class="ride-card">
@@ -639,7 +718,8 @@
                 <p><strong>Seats left:</strong> ${ride.seats}</p>
                 <p><strong>Contact:</strong> ${ride.phone}</p>
 
-                ${buttonHtml}
+                ${primaryButtonHtml}
+                ${seeRidersButtonHtml}
               </div>
             `;
           }
@@ -819,8 +899,16 @@
           return;
         }
 
-        const name       = document.getElementById("nameInput").value.trim();
-        const phone      = document.getElementById("phoneInput").value.trim();
+        // Get name and phone from profile
+        const name = profile && profile.name ? profile.name : "";
+        const phone = profile && profile.phone ? profile.phone : "";
+
+        if (!name || !phone) {
+          await showAlert("Please complete your profile before posting a ride.", "error");
+          navigate("profile");
+          return;
+        }
+
         const date       = document.getElementById("dateInput").value;
         const timeInput  = document.getElementById("timeInput");
         const time       = timeInput ? timeInput.value : "";
@@ -828,7 +916,7 @@
         const carModel   = document.getElementById("carInput").value.trim();
         const seatsValue = document.getElementById("seatsInput").value;
 
-        if (!name || !phone || !date || !mountain || !carModel || !seatsValue) {
+        if (!date || !mountain || !carModel || !seatsValue) {
           await showAlert("Please fill out all fields before posting.", "error");
           return;
         }
@@ -836,12 +924,12 @@
         const seats = Number(seatsValue);
 
         const driverProfile = {
-          name:      (profile && profile.name)      ? profile.name      : name,
-          instagram: (profile && profile.instagram) ? profile.instagram : "",
-          phone:     phone,
-          email:     (profile && profile.email)     ? profile.email     : "",
-          type:      (profile && profile.type)      ? profile.type      : "",
-          photo:     (profile && profile.photo)     ? profile.photo     : null
+          name:      profile.name,
+          instagram: profile.instagram || "",
+          phone:     profile.phone,
+          email:     profile.email || "",
+          type:      profile.type || "",
+          photo:     profile.photo || null
         };
 
         try {
@@ -1251,7 +1339,13 @@
         if (user) {
           await loadUserProfile();
           setupRidesListener();  // Start real-time sync
-          navigate("find");
+
+          // If profile doesn't exist yet, show profile setup; otherwise show find page
+          if (!profile || !profile.name) {
+            navigate("profile");
+          } else {
+            navigate("find");
+          }
         } else {
           // Clean up
           if (ridesUnsubscribe) {
