@@ -1,0 +1,127 @@
+//MY FINAL CF2 PROJECT//
+
+type Position = [number, number];
+
+interface Node {
+  position: Position;
+  path: Position[];
+}
+
+// Simple Queue ADT
+class Queue<T> {
+  private items: T[] = [];
+
+  enqueue(item: T): void {
+    this.items.push(item);
+  }
+
+  dequeue(): T | undefined {
+    return this.items.shift();
+  }
+
+  isEmpty(): boolean {
+    return this.items.length === 0;
+  }
+}
+
+// Grid setup
+const grid: string[][] = [
+  ['S', '.', '.', '#', '.'],
+  ['#', '#', '.', '#', '.'],
+  ['.', '.', '.', '.', '.'],
+  ['.', '#', '#', '#', '.'],
+  ['.', '.', '.', 'E', '.']
+];
+
+const rows = grid.length;
+const cols = grid[0].length;
+
+// Find start and end
+function findPositions(grid: string[][]) {
+  let start: Position = [0, 0];
+  let end: Position = [0, 0];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] === 'S') start = [r, c];
+      if (grid[r][c] === 'E') end = [r, c];
+    }
+  }
+
+  return { start, end };
+}
+
+// BFS using Queue ADT
+function bfs(grid: string[][]): Position[] | null {
+  const { start, end } = findPositions(grid);
+
+  const queue = new Queue<Node>();
+  queue.enqueue({ position: start, path: [start] });
+
+  const visited = new Set<string>();
+  visited.add(start.toString());
+
+  const directions: Position[] = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1]
+  ];
+
+  while (!queue.isEmpty()) {
+    const currentNode = queue.dequeue()!;
+    const [r, c] = currentNode.position;
+
+    if (r === end[0] && c === end[1]) {
+      return currentNode.path;
+    }
+
+    for (const [dr, dc] of directions) {
+      const newR = r + dr;
+      const newC = c + dc;
+      const key = `${newR},${newC}`;
+
+      if (
+        newR >= 0 && newR < rows &&
+        newC >= 0 && newC < cols &&
+        grid[newR][newC] !== '#' &&
+        !visited.has(key)
+      ) {
+        visited.add(key);
+
+        queue.enqueue({
+          position: [newR, newC],
+          path: [...currentNode.path, [newR, newC]]
+        });
+      }
+    }
+  }
+
+  return null;
+}
+
+// Print grid with path
+function printGridWithPath(grid: string[][], path: Position[]) {
+  const newGrid = grid.map(row => [...row]);
+
+  for (const [r, c] of path) {
+    if (newGrid[r][c] !== 'S' && newGrid[r][c] !== 'E') {
+      newGrid[r][c] = '*';
+    }
+  }
+
+  console.log("Grid with path:");
+  newGrid.forEach(row => {
+    console.log(row.join(' '));
+  });
+}
+
+// Run program
+const path = bfs(grid);
+
+if (path) {
+  console.log("Path found:", path);
+  printGridWithPath(grid, path);
+} else {
+  console.log("No path found");
+}
