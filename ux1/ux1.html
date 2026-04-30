@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cheyenne Mountain Zoo Redesign | Case Study</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background-color: #f4f5f7; 
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        :root {
+            --accent: #d35400; 
+            --card-bg: #ffffff;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 40px; 
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+            border: 1px solid #f0f0f0;
+        }
+
+        .header-card {
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        h1 {
+            font-size: 3.2rem;
+            margin: 0 0 15px 0;
+            line-height: 1.1;
+            color: #1a252f;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: #7f8c8d;
+            margin-bottom: 0;
+            font-weight: 300;
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .overview-box {
+            background-color: #fafbfc;
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid #eaeaea;
+        }
+
+        .overview-box h3 {
+            margin-top: 0;
+            color: var(--accent);
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            color: #1a252f;
+            margin-top: 0;
+            margin-bottom: 30px;
+            display: inline-block;
+            border-bottom: 3px solid var(--accent);
+            padding-bottom: 5px;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            color: #55606f;
+            margin-bottom: 20px;
+        }
+
+        /* THIS IS THE NEW GRID SYSTEM FOR YOUR PHOTOS */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* makes them sit side-by-side */
+            gap: 20px; /* space between the pics */
+            margin: 30px 0;
+        }
+
+        /* updated placeholder to look right in the grid */
+        .img-placeholder {
+            width: 100%;
+            min-height: 200px;
+            background-color: #f1f5f9;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 1rem;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* basic image styling so they fit the grid perfectly */
+        img {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            display: block;
+        }
+
+        /* keeps the cover image from being insanely huge */
+        .cover-img {
+            max-width: 400px;
+            margin: 40px auto 0 auto;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="card header-card">
+            <h1>Cheyenne Mountain Zoo Redesign</h1>
+            <p class="subtitle">Making ticket buying way less of a headache.</p>
+            <img src="Home Page hf2.png" class="cover-img">
+        </div>
+
+        <div class="overview-grid">
+            <div class="overview-box">
+                <h3>Summary</h3>
+                <p>I had to redesign the CMZ website to make buying tickets easier. The old site was confusing, and the outcome is a clean prototype that makes checking out super simple.</p>
+            </div>
+            <div class="overview-box">
+                <h3>My Role</h3>
+                <p>I was the main UX designer and researcher. I did everything from testing the old site to building the final prototype in Figma.</p>
+            </div>
+            <div class="overview-box">
+                <h3>The Challenge</h3>
+                <p>The ticket process was overloaded with text and had a clunky calendar. I focused just on the homepage and ticket flow due to class time limits.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Research</h2>
+            
+            <h3>Usability Testing the Old Site</h3>
+            <p>I ran usability tests with three different people on the original CMZ website. The biggest pain points were that the ticket pages had way too much text and the calendar to pick a time was super ugly and slow. People also felt like the checkout popup looked sketchy. A key opportunity was to just make the calendar and ticket selection clean and standard like other modern websites.</p>
+            
+            <div class="photo-grid">
+                <img src="oldwebsite.png" class="cover-img">
+                <img src="affinitymap.png" class="cover-img">
+            </div>
+
+            <h3>How Might We?</h3>
+            <p>How might we make the ticket purchasing process feel safe, simple, and fast for zoo visitors?</p>
+        </div>
+
+        <div class="card">
+            <h2>Design</h2>
+            
+            <h3>Problem Statement</h3>
+            <p>Zoo-goers need a way to purchase tickets in order to see the animals at the zoo.</p>
+
+            <h3>Task Flow</h3>
+            <p>I mapped out the exact steps a user would take to get from the homepage to a confirmed ticket. This helped me see exactly what screens I needed to design so I didn't waste time on unnecessary stuff.</p>
+            
+            <img src="taskflow.png" class="cover-img">
+
+            <h3>Low Fidelity Wireframes</h3>
+            <p>I sketched out the basic layout of the screens without any colors or pictures. This was just to figure out where the buttons and text boxes should go so the flow made sense.</p>
+            
+            <div class="photo-grid">
+                <img src="hp.png" class="cover-img">
+                <img src="cp.png" class="cover-img">
+                <img src="to.png" class="cover-img">
+                <img src="pi.png" class="cover-img">
+                <img src="cart.png" class="cover-img">
+                <img src="conf.png" class="cover-img">
+                <img src="a.png" class="cover-img">
+            </div>
+
+            <h3>Mid Fidelity Wireframes</h3>
+            <p>I moved my sketches into Figma and made them look more like a real website but still in grayscale. This helped me lock in the grid spacing and make sure everything lined up right before adding the fun stuff.</p>
+            
+            <div class="photo-grid">
+                <img src="Home Pagemf.png" class="cover-img">
+                <img src="Calendarmf.png" class="cover-img">
+                <img src="Calendar after interactionmf.png" class="cover-img">
+                <img src="Ticket Optionsmf.png" class="cover-img">
+                <img src="Cart Pagemf.png" class="cover-img">
+                <img src="Personal infomf.png" class="cover-img">
+                <img src="Confirmation Infomf.png" class="cover-img">
+                <img src="Animalsmf.png" class="cover-img">
+            </div>
+
+            <h3>High Fidelity Prototype</h3>
+            <p>I added all the real photos, colors, and fonts to make it look totally finished. Then I connected all the buttons in Figma so you could actually click through it like a real website.</p>
+
+            
+            <div class="photo-grid">
+                <img src="Home Page hf2.png" class="cover-img">
+                <img src="Calendarhf2.png" class="cover-img">
+                <img src="Calendar after interactionhf2.png" class="cover-img">
+                <img src="Ticket Optionshf2.png" class="cover-img">
+                <img src="Cart Pagehf2.png" class="cover-img">
+                <img src="Personal infohf2.png" class="cover-img">
+                <img src="Personal info2hf2.png" class="cover-img">
+                <img src="Confirmation Infohf2.png" class="cover-img">
+                <img src="Animalshf2.png" class="cover-img">
+            
+            </div>
+
+            <h3>Instructor Feedback</h3>
+            <p>My instructor pointed out that some of my spacing was a bit off. I went back and fixed my grid so everything was spaced consistently and made sure that all buttons looked interactable.</p>
+        </div>
+
+        <div class="card">
+            <h2>Evaluation & Results</h2>
+            
+            <h3>Testing the Prototype</h3>
+            <p>I had three new people test my high-fidelity prototype using a discussion guide I made. The biggest pain point was my cart page, because I put the checkout button above the extra ticket options, which confused everyone. They also thought the final payment button just saying "Checkout" again was weird.</p>
+            
+        
+
+            <h3>Updates Made</h3>
+            <p>To fix those pain points, I completely rearranged the cart page so the extra tickets are at the top and the checkout button is pinned to the very bottom. I also changed the final payment button to say "Complete Purchase" and added a little lock icon so it feels more secure.</p>
+        </div>
+
+        <div class="card">
+            <h2>Reflection</h2>
+            
+            <h3>Future Plans</h3>
+            <p>If I had more time, I would definitely design out the mobile version of the site since most people probably buy tickets on their phones. I'd also want to add a feature where you can see the ticket prices right on the calendar before you click a day. My next step would be to test the updated prototype again to make sure my cart page fixes actually worked.</p>
+
+            <h3>Key Takeaways</h3>
+            <p>The biggest thing I learned from this project is that what makes sense to me as the designer might be totally confusing to the user. User testing is honestly a lifesaver because it catches those dumb mistakes like my cart page layout. I also learned how important it is to keep things simple instead of overloading the screen with info.</p>
+        </div>
+
+    </div>
+
+</body>
+</html>
